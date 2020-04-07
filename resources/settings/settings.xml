@@ -363,6 +363,14 @@
             <listEntry value="50400">@Strings.UtcPlus14</listEntry>
         </settingConfig>
     </setting>
+    
+    <setting propertyKey="@Properties.PressureGraphBorder" title="@Strings.PressureGraphBorderTitle">
+        <settingConfig type="list">
+            <listEntry value="2">@Strings.width2</listEntry>
+            <listEntry value="3">@Strings.width3</listEntry>
+            <listEntry value="4">@Strings.width4</listEntry>
+        </settingConfig>
+    </setting>
       
 
     <setting propertyKey="@Properties.UseMilitaryFormat" title="@Strings.MilitaryFormatTitle">

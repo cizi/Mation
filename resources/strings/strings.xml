@@ -64,6 +64,7 @@
         
 
     <string id="width2">2</string>
+    <string id="width3">3</string>
     <string id="width4">4</string>
 
     <string id="width6">6</string>
@@ -138,7 +139,9 @@
     <string id="UtcPlus12">+12.00</string>
     <string id="UtcPlus1275">+12.45</string>
     <string id="UtcPlus13">+13.00</string>
-    <string id="UtcPlus14">+14.00</string>                 
+    <string id="UtcPlus14">+14.00</string>        
+    
+    <string id="PressureGraphBorderTitle">Threshold value for BARO graph (hPa)</string>
 
 
 </strings>

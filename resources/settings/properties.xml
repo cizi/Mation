@@ -7,6 +7,7 @@
     <property id="Opt2" type="number">4</property>
     <property id="Opt3" type="number">6</property>
     <property id="Opt4" type="number">7</property>
+    
     <property id="DaylightProgess" type="number">0xFFFF00</property>
     <property id="DaylightProgessWidth" type="number">6</property>
     <property id="CurrentTimePointerWidth" type="number">16</property>
@@ -38,5 +39,7 @@
     <property id="SecondTimeOnDialColor" type="number">0xFF00FF</property>
     <property id="SecondTimePointerType" type="number">3</property>
     <property id="SecondTimeUtcOffset" type="number">0</property>
-
+    
+    <property id="PressureGraphBorder" type="number">2</property>
+ 
 </properties>
