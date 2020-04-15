@@ -1108,6 +1108,7 @@ class SundanceView extends WatchUi.WatchFace {
             var bat = app.getProperty("batteryTime");
             if (bat == null) {
                 bat = [time.now().value(), batteryPercent];
+                app.setProperty("batteryTime", bat);
                 remainingBattery = "W8";    // still waiting for battery
             } else {
                 var nowValue = time.now().value(); 
