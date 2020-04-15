@@ -74,6 +74,7 @@
             <listEntry value="11">@Strings.Distance</listEntry>
             <listEntry value="5">@Strings.HR</listEntry>
             <listEntry value="6">@Strings.Battery</listEntry>
+            <listEntry value="12">@Strings.BatteryInDays</listEntry>
             <listEntry value="7">@Strings.Altitude</listEntry>
             <listEntry value="8">@Strings.Pressure</listEntry>
             <listEntry value="10">@Strings.SecondTime</listEntry>
@@ -90,6 +91,7 @@
             <listEntry value="11">@Strings.Distance</listEntry>
             <listEntry value="5">@Strings.HR</listEntry>
             <listEntry value="6">@Strings.Battery</listEntry>
+            <listEntry value="12">@Strings.BatteryInDays</listEntry>
             <listEntry value="7">@Strings.Altitude</listEntry>
             <listEntry value="8">@Strings.Pressure</listEntry>
             <listEntry value="10">@Strings.SecondTime</listEntry>
@@ -106,6 +108,7 @@
         	<listEntry value="11">@Strings.Distance</listEntry>
             <listEntry value="5">@Strings.HR</listEntry>
             <listEntry value="6">@Strings.Battery</listEntry>
+            <listEntry value="12">@Strings.BatteryInDays</listEntry>
             <listEntry value="7">@Strings.Altitude</listEntry>
             <listEntry value="8">@Strings.Pressure</listEntry>
             <listEntry value="10">@Strings.SecondTime</listEntry>
@@ -124,6 +127,7 @@
         	<listEntry value="11">@Strings.Distance</listEntry>
             <listEntry value="5">@Strings.HR</listEntry>
             <listEntry value="6">@Strings.Battery</listEntry>
+            <listEntry value="12">@Strings.BatteryInDays</listEntry>
             <listEntry value="7">@Strings.Altitude</listEntry>
             <listEntry value="8">@Strings.Pressure</listEntry>
             <listEntry value="10">@Strings.SecondTime</listEntry>

@@ -27,6 +27,7 @@ class SundanceView extends WatchUi.WatchFace {
     const SECOND_TIME = 10;
     const DISABLED = 100;
     const DISTANCE = 11;
+    const BATTERY_IN_DAYS = 12;
 
     // others
     hidden var settings;
@@ -40,6 +41,7 @@ class SundanceView extends WatchUi.WatchFace {
     hidden var uc;
     hidden var smallDialCoordsLines;
     hidden var smallDialCoordsNums;
+    hidden var remainingBattery;
 
     // Sunset / sunrise / moon phase vars
     hidden var sc;
@@ -146,6 +148,7 @@ class SundanceView extends WatchUi.WatchFace {
         goldenAmMoment = null;
         goldenPmMoment = null;
         moonPhase = null;
+        remainingBattery = "W8";
     }
 
     // Called when this View is brought to the foreground. Restore
@@ -267,6 +270,16 @@ class SundanceView extends WatchUi.WatchFace {
 
     // The user has just looked at their watch. Timers and animations may be started here.
     function onExitSleep() {
+        /* sleep = false;
+        var NB = App.getApp().getProperty("BATT");
+        if (NB == null) { 
+            NB=0;
+        } else {
+            NB = NB[2];
+        }
+        if (Time.now().value() > NB + 600) { 
+            Battery();
+        }*/
     }
 
     // Terminate any active timers and prepare for slow updates.
@@ -291,7 +304,11 @@ class SundanceView extends WatchUi.WatchFace {
             break;
 
             case BATTERY:
-            drawBattery(fieldCors[0], fieldCors[1], dc, position);
+            drawBattery(fieldCors[0], fieldCors[1], dc, position, today, false);
+            break;
+            
+            case BATTERY_IN_DAYS:
+            drawBattery(fieldCors[0], fieldCors[1], dc, position, today, true);
             break;
 
             case HR:
@@ -1035,7 +1052,7 @@ class SundanceView extends WatchUi.WatchFace {
 
 
     // Draw battery witch % state
-    function drawBattery(xPos, yPos, dc, position) {
+    function drawBattery(xPos, yPos, dc, position, time, inDays) {
         if (position == 1) {
             xPos = (is280dev ? xPos + 33 : xPos + 32);
             yPos = (is240dev ? yPos - 18 : yPos - 16);
@@ -1067,12 +1084,48 @@ class SundanceView extends WatchUi.WatchFace {
         }
 
         dc.setColor(batteryColor, bgColor);
-        var batteryState = ((System.getSystemStats().battery / 10) * 2).toNumber();
+        var batteryPercent = System.getSystemStats().battery;
+        var batteryState = ((batteryPercent / 10) * 2).toNumber();
         dc.fillRectangle(xPos + 1 - 34, yPos + 5, batteryState + 1, 11);
 
-        var batText = System.getSystemStats().battery.toNumber().toString() + "%";
+        var batText = batteryPercent.toNumber().toString() + "%";
         dc.setColor(frColor, Gfx.COLOR_TRANSPARENT);
-        dc.drawText(xPos + 29 - 34, yPos, fntDataFields, batText, Gfx.TEXT_JUSTIFY_LEFT);
+        if (inDays) {
+            if (time.min % 10 == 0) {   // battery is calculating each ten minutes (hope in more accurate results)
+                getRemainingBattery(time, batteryPercent);
+            }
+            batText = remainingBattery;
+        }  
+        dc.drawText(xPos + 29 - 34, yPos, fntDataFields, batText, Gfx.TEXT_JUSTIFY_LEFT);  
+    }
+    
+    
+    // set variable named remainingBattery to remaining battery in days / hours
+    function getRemainingBattery(time, batteryPercent) { 
+        if (System.getSystemStats().charging) { 
+            remainingBattery = "W8";    
+        } else {
+            var bat = app.getProperty("batteryTime");
+            if (bat == null) {
+                bat = [time.now().value(), batteryPercent];
+                remainingBattery = "W8";    // still waiting for battery
+            } else {
+                var nowValue = time.now().value(); 
+                if (bat[1] > batteryPercent) {
+                    var remaining = (bat[1] - batteryPercent).toFloat() / (nowValue - bat[0]).toFloat();
+                    remaining = remaining * 60 * 60;    // percent consumption per hour
+                    remaining = batteryPercent.toFloat() / remaining;
+                    if (remaining > 48) { 
+                        remaining = Math.round(remaining / 24).toNumber() + "d";
+                    } else {
+                        remaining = Math.round(remaining).toNumber() + "h";
+                    }
+                    bat = [nowValue, batteryPercent];
+                    app.setProperty("batteryTime", bat);
+                    remainingBattery = remaining;
+                } 
+            }
+        }
     }
 
 
