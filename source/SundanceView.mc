@@ -214,9 +214,11 @@ class SundanceView extends WatchUi.WatchFace {
             dc.drawText(halfWidth + moonCentering, 65, Gfx.FONT_TINY, dateString, Gfx.TEXT_JUSTIFY_CENTER);
         }
         
-        // Logging pressure history all the time
-        if (today.min == 0) {
+        // Logging pressure history each hour and only if I don't have the value already logged
+        var lastPressureLoggingTime = (app.getProperty("lastPressureLoggingTime") == null ? null : app.getProperty("lastPressureLoggingTime").toNumber());
+        if ((today.min == 0) && (today.hour != lastPressureLoggingTime)) {
             hadnlePressureHistorty(getPressure());
+            app.setProperty("lastPressureLoggingTime", today.hour);
         }
         
         // second time calculation and dial drawing if any
@@ -268,16 +270,7 @@ class SundanceView extends WatchUi.WatchFace {
 
     // The user has just looked at their watch. Timers and animations may be started here.
     function onExitSleep() {
-        /* sleep = false;
-        var NB = App.getApp().getProperty("BATT");
-        if (NB == null) { 
-            NB=0;
-        } else {
-            NB = NB[2];
-        }
-        if (Time.now().value() > NB + 600) { 
-            Battery();
-        }*/
+
     }
 
     // Terminate any active timers and prepare for slow updates.
@@ -1065,24 +1058,24 @@ class SundanceView extends WatchUi.WatchFace {
             xPos += 2;
         }
         dc.setPenWidth(1);
-        if (System.getSystemStats().battery <= 10) {
+        var batteryPercent = System.getSystemStats().battery;
+        if (batteryPercent <= 10) {
             dc.setColor(Gfx.COLOR_RED, bgColor);
         } else {
             dc.setColor(frColor, bgColor);
         }
-
+        
         var batteryWidth = 23;
         dc.drawRectangle(xPos - 34, yPos + 4, batteryWidth, 13);    // battery
         dc.drawRectangle(xPos + batteryWidth - 34, yPos + 8, 2, 5); // battery top
         var batteryColor = Gfx.COLOR_GREEN;
-        if (System.getSystemStats().battery <= 10) {
+        if (batteryPercent <= 10) {
             batteryColor = Gfx.COLOR_RED;
-        } else if (System.getSystemStats().battery <= 35) {
+        } else if (batteryPercent <= 35) {
             batteryColor = Gfx.COLOR_ORANGE;
         }
 
         dc.setColor(batteryColor, bgColor);
-        var batteryPercent = System.getSystemStats().battery;
         var batteryState = ((batteryPercent / 10) * 2).toNumber();
         dc.fillRectangle(xPos + 1 - 34, yPos + 5, batteryState + 1, 11);
 
@@ -1179,7 +1172,8 @@ class SundanceView extends WatchUi.WatchFace {
         if ((position == 3) && is240dev) {
             xPos -= 4;
         }
-        if (today.min == 0) {   // grap is redrawning only in whole hour
+        var lastPressureLoggingTime = (app.getProperty("lastPressureLoggingTime") == null ? null : app.getProperty("lastPressureLoggingTime").toNumber());
+        if ((today.min == 0) && (today.hour != lastPressureLoggingTime)) {   // grap is redrawning only in whole hour
             var baroFigure = 0;
             var pressure3 = app.getProperty("pressure8");
             var pressure2 = app.getProperty("pressure4");
