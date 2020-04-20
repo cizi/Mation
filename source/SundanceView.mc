@@ -41,7 +41,6 @@ class SundanceView extends WatchUi.WatchFace {
     hidden var uc;
     hidden var smallDialCoordsLines;
     hidden var smallDialCoordsNums;
-    hidden var remainingBattery;
 
     // Sunset / sunrise / moon phase vars
     hidden var sc;
@@ -148,7 +147,6 @@ class SundanceView extends WatchUi.WatchFace {
         goldenAmMoment = null;
         goldenPmMoment = null;
         moonPhase = null;
-        remainingBattery = "W8";
     }
 
     // Called when this View is brought to the foreground. Restore
@@ -1094,7 +1092,7 @@ class SundanceView extends WatchUi.WatchFace {
             if (time.min % 10 == 0) {   // battery is calculating each ten minutes (hope in more accurate results)
                 getRemainingBattery(time, batteryPercent);
             }
-            batText = remainingBattery;
+            batText = (app.getProperty("remainingBattery") == null ? "W8" : app.getProperty("remainingBattery").toString());
         }  
         dc.drawText(xPos + 29 - 34, yPos, fntDataFields, batText, Gfx.TEXT_JUSTIFY_LEFT);  
     }
@@ -1102,17 +1100,20 @@ class SundanceView extends WatchUi.WatchFace {
     
     // set variable named remainingBattery to remaining battery in days / hours
     function getRemainingBattery(time, batteryPercent) { 
-        if (System.getSystemStats().charging) { 
-            remainingBattery = "W8";    
+        if (System.getSystemStats().charging) {         // if charging
+            app.setProperty("remainingBattery", "W8");  // will show up "wait" sign
         } else {
             var bat = app.getProperty("batteryTime");
             if (bat == null) {
                 bat = [time.now().value(), batteryPercent];
                 app.setProperty("batteryTime", bat);
-                remainingBattery = "W8";    // still waiting for battery
+                app.setProperty("remainingBattery", "W8");    // still waiting for battery
             } else {
                 var nowValue = time.now().value(); 
-                if (bat[1] > batteryPercent) {
+                if (bat[1] < batteryPercent) {              // if the battery will increase (charging, F6X Solar or heat)
+                    bat = [nowValue, batteryPercent];       // will save the new battery state for next calculating round
+                    app.setProperty("batteryTime", bat);
+                } else if (bat[1] > batteryPercent) {
                     var remaining = (bat[1] - batteryPercent).toFloat() / (nowValue - bat[0]).toFloat();
                     remaining = remaining * 60 * 60;    // percent consumption per hour
                     remaining = batteryPercent.toFloat() / remaining;
@@ -1121,9 +1122,7 @@ class SundanceView extends WatchUi.WatchFace {
                     } else {
                         remaining = Math.round(remaining).toNumber() + "h";
                     }
-                    bat = [nowValue, batteryPercent];
-                    app.setProperty("batteryTime", bat);
-                    remainingBattery = remaining;
+                    app.setProperty("remainingBattery", remaining);
                 } 
             }
         }
