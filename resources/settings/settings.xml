@@ -368,6 +368,17 @@
         </settingConfig>
     </setting>
     
+    <setting propertyKey="@Properties.PressureGraphPeriod" title="@Strings.PressureGraphPeriodTitle">
+        <settingConfig type="list">
+            <listEntry value="2">@Strings.width2</listEntry>
+            <listEntry value="4">@Strings.width4</listEntry>
+            <listEntry value="8">@Strings.width8</listEntry>
+            <listEntry value="12">@Strings.width12</listEntry>
+			<listEntry value="16">@Strings.width16</listEntry>
+			<listEntry value="24">@Strings.width24</listEntry>
+        </settingConfig>
+    </setting>
+    
     <setting propertyKey="@Properties.PressureGraphBorder" title="@Strings.PressureGraphBorderTitle">
         <settingConfig type="list">
             <listEntry value="2">@Strings.width2</listEntry>

@@ -40,6 +40,7 @@
     <property id="SecondTimePointerType" type="number">3</property>
     <property id="SecondTimeUtcOffset" type="number">0</property>
     
+    <property id="PressureGraphPeriod" type="number">8</property>
     <property id="PressureGraphBorder" type="number">2</property>
  
 </properties>

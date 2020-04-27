@@ -28,6 +28,7 @@ class SundanceView extends WatchUi.WatchFace {
     const DISABLED = 100;
     const DISTANCE = 11;
     const BATTERY_IN_DAYS = 12;
+    const PRESSURE_ARRAY_KEY = "pressure";
 
     // others
     hidden var settings;
@@ -217,7 +218,7 @@ class SundanceView extends WatchUi.WatchFace {
         // Logging pressure history each hour and only if I don't have the value already logged
         var lastPressureLoggingTimeHistoty = (app.getProperty("lastPressureLoggingTimeHistoty") == null ? null : app.getProperty("lastPressureLoggingTimeHistoty").toNumber());
         if ((today.min == 0) && (today.hour != lastPressureLoggingTimeHistoty)) {
-            hadnlePressureHistorty(getPressure());
+            handlePressureHistorty(getPressure());
             app.setProperty("lastPressureLoggingTimeHistoty", today.hour);
         }
         
@@ -1175,9 +1176,10 @@ class SundanceView extends WatchUi.WatchFace {
         var lastPressureLoggingTime = (app.getProperty("lastPressureLoggingTime") == null ? null : app.getProperty("lastPressureLoggingTime").toNumber());
         if ((today.min == 0) && (today.hour != lastPressureLoggingTime)) {   // grap is redrawning only in whole hour
             var baroFigure = 0;
-            var pressure3 = app.getProperty("pressure8");
-            var pressure2 = app.getProperty("pressure4");
-            var pressure1 = app.getProperty("pressure0");
+            var targetPeriod = App.getApp().getProperty("PressureGraphPeriod");
+            var pressure3 = app.getProperty(PRESSURE_ARRAY_KEY + targetPeriod.toString());  // last saved value for current setting
+            var pressure2 = app.getProperty(PRESSURE_ARRAY_KEY + (targetPeriod / 2).toString());    // middle period for current setting
+            var pressure1 = app.getProperty("pressure0");   // always need a current value which is saved on position 0
             var PRESSURE_GRAPH_BORDER = App.getApp().getProperty("PressureGraphBorder");    // pressure border to change the graph in hPa
             if (pressure1 != null) {    // always should have at least pressure1 but test it for sure
                 pressure1 = pressure1.toNumber();
@@ -1423,13 +1425,22 @@ class SundanceView extends WatchUi.WatchFace {
 
     // Each hour is the pressure saved (durring last 8 hours) for creation a simple graph
     // storing 8 variables but working just with 4 right now (8,4.1)
-    function hadnlePressureHistorty(pressureValue) {
-        var pressures = ["pressure0", "pressure1", "pressure2", "pressure3", "pressure4", "pressure5", "pressure6", "pressure7", "pressure8"];
+    function handlePressureHistorty(pressureValue) {
+        var graphPeriod = App.getApp().getProperty("PressureGraphPeriod");
+        var pressures = []; 
+        // var pressures = ["pressure0" ....  "pressure8"];
+        for(var period = 0; period <= graphPeriod; period+=1) {
+            pressures.add(PRESSURE_ARRAY_KEY + period.toString());
+        }
+
         var preindex = -1;
         for(var pressure = pressures.size(); pressure > 1; pressure-=1) {
             preindex = pressure - 2;
-            if ((preindex >= 0) && (app.getProperty(pressures[preindex]) != null)) {
-                app.setProperty(pressures[pressure - 1], app.getProperty(pressures[preindex]));
+            if (preindex >= 0) {
+                if (app.getProperty(pressures[preindex]) == null) {
+                    app.setProperty(pressures[preindex], pressureValue);
+                }
+                app.setProperty(pressures[pressure - 1], app.getProperty(pressures[preindex]));             
             }
         }
         app.setProperty("pressure0", pressureValue);

@@ -76,6 +76,7 @@
     <string id="width16">16</string>
     <string id="width18">18</string>
 	<string id="width20">20</string>
+	<string id="width24">24</string>
 
     <string id="ShowFullDiaTitle">Show full dial (included small hours indicators)</string>
     <string id="ShowAlarmIndicatorTitle">Show alarm indicator</string>
@@ -141,8 +142,8 @@
     <string id="UtcPlus1275">+12.45</string>
     <string id="UtcPlus13">+13.00</string>
     <string id="UtcPlus14">+14.00</string>        
-    
+        
+    <string id="PressureGraphPeriodTitle">BARO graph tracking time (hours)</string>
     <string id="PressureGraphBorderTitle">Threshold value for BARO graph (hPa)</string>
-
 
 </strings>
