@@ -215,10 +215,10 @@ class SundanceView extends WatchUi.WatchFace {
         }
         
         // Logging pressure history each hour and only if I don't have the value already logged
-        var lastPressureLoggingTime = (app.getProperty("lastPressureLoggingTime") == null ? null : app.getProperty("lastPressureLoggingTime").toNumber());
-        if ((today.min == 0) && (today.hour != lastPressureLoggingTime)) {
+        var lastPressureLoggingTimeHistoty = (app.getProperty("lastPressureLoggingTimeHistoty") == null ? null : app.getProperty("lastPressureLoggingTimeHistoty").toNumber());
+        if ((today.min == 0) && (today.hour != lastPressureLoggingTimeHistoty)) {
             hadnlePressureHistorty(getPressure());
-            app.setProperty("lastPressureLoggingTime", today.hour);
+            app.setProperty("lastPressureLoggingTimeHistoty", today.hour);
         }
         
         // second time calculation and dial drawing if any
@@ -1210,6 +1210,7 @@ class SundanceView extends WatchUi.WatchFace {
                     }
                 }
             }
+            app.setProperty("lastPressureLoggingTime", today.hour);
             app.setProperty("baroFigure", baroFigure);
         }        
         
