@@ -1,7 +1,7 @@
 using Toybox.Application;
 using Toybox.WatchUi;
 
-class SundanceApp extends Application.AppBase {
+class MationApp extends Application.AppBase {
 
     function initialize() {
         AppBase.initialize();
@@ -17,7 +17,7 @@ class SundanceApp extends Application.AppBase {
 
     // Return the initial view of your application here
     function getInitialView() {
-        return [ new SundanceView() ];
+        return [ new MationView() ];
     }
 
     // New app settings have been received so trigger a UI update
