@@ -66,6 +66,8 @@ class MationView extends WatchUi.WatchFace {
     hidden var field2 = null;
     hidden var field3 = null;
     hidden var field4 = null;
+    
+    hidden var isAwake;     // TEST
 
     function initialize() {
         WatchFace.initialize();
@@ -91,9 +93,9 @@ class MationView extends WatchUi.WatchFace {
 
         var yPosFor23 = ((dc.getHeight() / 6).toNumber() * 4) - 9;
         field1 = [halfWidth - 23, 60];
-        field2 = [(dc.getWidth() / 5) + 2, yPosFor23];
-        field3 = [halfWidth + 56, yPosFor23];
-        field4 = [(dc.getWidth() / 13) * 7, ((dc.getHeight() / 4).toNumber() * 3) - 6];     // on F6 [140, 189]
+        field2 = [50, halfWidth - 4];
+        field3 = [(dc.getWidth() - 44), halfWidth - 4];
+        field4 = [halfWidth + 6, dc.getWidth() - 66];     // on F6 [140, 189]
 
         smallDialCoordsLines = uc.calculateSmallDialLines(halfWidth);
 
@@ -104,7 +106,9 @@ class MationView extends WatchUi.WatchFace {
         bluePmMoment = null;
         goldenAmMoment = null;
         goldenPmMoment = null;
-        moonPhase = null;
+        moonPhase = null; 
+        
+        isAwake = true; // TEST    
     }
 
     // Called when this View is brought to the foreground. Restore
@@ -152,8 +156,6 @@ class MationView extends WatchUi.WatchFace {
         }
 
         drawDial(dc, today);                                    // main dial
-        drawClockHands(dc, today);
-        drawSunsetSunriseLine(field1[0], field1[1], dc, today);     // SUNSET / SUNRICE line from public variables
 
         // DATE
         if (App.getApp().getProperty("DateFormat") != DISABLED) {
@@ -163,27 +165,29 @@ class MationView extends WatchUi.WatchFace {
                 today = Gregorian.info(Time.now(), Time.FORMAT_SHORT);
                 var dateWidth = dc.getTextWidthInPixels(dateString, Gfx.FONT_TINY);
                 moonCentering = 14;
-                drawMoonPhase(halfWidth - (dateWidth / 2) - 6, 78, dc, getMoonPhase(today), 0);
+                drawMoonPhase(halfWidth - (dateWidth / 2) - 6, 198, dc, getMoonPhase(today), 0);
             }
-            dc.setColor(frColor, Gfx.COLOR_TRANSPARENT);
-            dc.drawText(halfWidth + moonCentering, 65, Gfx.FONT_TINY, dateString, Gfx.TEXT_JUSTIFY_CENTER);
-        }
-        
-        // Logging pressure history each hour and only if I don't have the value already logged
-        var lastPressureLoggingTimeHistoty = (app.getProperty("lastPressureLoggingTimeHistoty") == null ? null : app.getProperty("lastPressureLoggingTimeHistoty").toNumber());
-        if ((today.min == 0) && (today.hour != lastPressureLoggingTimeHistoty)) {
-            handlePressureHistorty(getPressure());
-            app.setProperty("lastPressureLoggingTimeHistoty", today.hour);
-        }
+            dc.setColor(themeColor, Gfx.COLOR_TRANSPARENT);
+            dc.drawText(halfWidth + moonCentering, 185, Gfx.FONT_TINY, dateString.toUpper(), Gfx.TEXT_JUSTIFY_CENTER);
+        }       
         
         // second time calculation and dial drawing if any
         var secondTime = calculateSecondTime(new Time.Moment(now.value()));
         
-              
-        drawDataField(App.getApp().getProperty("Opt1"), 1, field1, today, secondTime, dc);  // FIELD 1
-        drawDataField(App.getApp().getProperty("Opt2"), 2, field2, today, secondTime, dc);  // FIELD 2
-        drawDataField(App.getApp().getProperty("Opt3"), 3, field3, today, secondTime, dc);  // FIELD 3
-        drawDataField(App.getApp().getProperty("Opt4"), 4, field4, today, secondTime, dc);  // FIELD 4
+        drawMeter(dc, 135, 225); // LEFT
+        drawPressureToMeter(dc);
+        
+        drawMeter(dc, 315, 405); // RIGHT
+        drawAltToMeter(dc);
+             
+        // drawDataField(App.getApp().getProperty("Opt1"), 1, field1, today, secondTime, dc);  // FIELD 1
+        drawDataField(8, 2, field2, today, secondTime, dc);  // FIELD 2 - App.getApp().getProperty("Opt2")
+        drawDataField(7, 3, field3, today, secondTime, dc);  // FIELD 3 - App.getApp().getProperty("Opt3")
+        if (App.getApp().getProperty("ShowBatteryInDays")) {
+            drawDataField(12, 4, field4, today, secondTime, dc);  // FIELD 4 - App.getApp().getProperty("Opt4")
+        } else {
+            drawDataField(6, 4, field4, today, secondTime, dc);  // FIELD 4 - App.getApp().getProperty("Opt4")
+        }    
         
         if (App.getApp().getProperty("ShowNotificationAndConnection")) {
             drawBtConnection(dc);
@@ -191,14 +195,17 @@ class MationView extends WatchUi.WatchFace {
         }
         if (App.getApp().getProperty("AlarmIndicator")) {
             drawBell(dc);
-        }
-
-        // TIME
-        /* dc.setColor(frColor, Gfx.COLOR_TRANSPARENT);
-        var timeString = getFormattedTime(today.hour, today.min);
-        dc.drawText(46, halfWidth - (dc.getFontHeight(Gfx.FONT_SYSTEM_NUMBER_HOT) / 2) + 2, fntDataFields, timeString[:amPmFull], Gfx.TEXT_JUSTIFY_CENTER);
-        dc.drawText(halfWidth, halfWidth - (Gfx.getFontHeight(Gfx.FONT_SYSTEM_NUMBER_HOT) / 2), Gfx.FONT_SYSTEM_NUMBER_HOT, timeString[:formatted], Gfx.TEXT_JUSTIFY_CENTER);
-        */
+        }    
+        
+        // TIME 
+        drawClockHands(dc, today);
+        
+        // Logging pressure history each hour and only if I don't have the value already logged
+        var lastPressureLoggingTimeHistoty = (app.getProperty("lastPressureLoggingTimeHistoty") == null ? null : app.getProperty("lastPressureLoggingTimeHistoty").toNumber());
+        if ((today.min == 0) && (today.hour != lastPressureLoggingTimeHistoty)) {
+            handlePressureHistorty(getPressure());
+            app.setProperty("lastPressureLoggingTimeHistoty", today.hour);
+        }    
     }
     
     
@@ -206,47 +213,47 @@ class MationView extends WatchUi.WatchFace {
         var hr = (time.hour >= 12 ? time.hour - 12 : time.hour) - 3;
         var pen = 4;
         var handsAngle = 3;
-        var hrHandStart = 7;
+        var handCenterCircle = 7;
         var hrHandEnd = halfWidth - 45;
-        var hrHandSemiEnd = halfWidth - 100;
+        var handSemiEnd = halfWidth - 100;  // white part circle
         
-        dc.setColor(Gfx.COLOR_DK_GRAY, Gfx.COLOR_TRANSPARENT);
+        dc.setColor(App.getApp().getProperty("HandsBottomColor"), Gfx.COLOR_TRANSPARENT);
         dc.fillCircle(halfWidth, halfWidth, 9);
         
-        var hrCoef = ((hr + (time.min.toFloat() / 60)) * 30) + handsAngle;
+        var hrAngle = ((hr + (time.min.toFloat() / 60)) * 30);
+        var hrCoef = hrAngle + handsAngle;
         var angleDeg = (hrCoef * Math.PI) / 180;
         var hrHandX1 = ((hrHandEnd * Math.cos(angleDeg)) + halfWidth);
         var hrHandY1 = ((hrHandEnd * Math.sin(angleDeg)) + halfWidth);
         
-        hrCoef = ((hr + (time.min.toFloat() / 60)) * 30) + 270;
+        hrCoef = hrAngle + 270;
         angleDeg = (hrCoef * Math.PI) / 180;
-        var hrHandX3 = ((hrHandStart * Math.cos(angleDeg)) + halfWidth);
-        var hrHandY3 = ((hrHandStart * Math.sin(angleDeg)) + halfWidth);
+        var hrHandX3 = ((handCenterCircle * Math.cos(angleDeg)) + halfWidth);
+        var hrHandY3 = ((handCenterCircle * Math.sin(angleDeg)) + halfWidth);
         
-        hrCoef = ((hr + (time.min.toFloat() / 60)) * 30) - handsAngle;
+        hrCoef = hrAngle - handsAngle;
         angleDeg = (hrCoef * Math.PI) / 180;
         var hrHandX2 = ((hrHandEnd * Math.cos(angleDeg)) + halfWidth);
         var hrHandY2 = ((hrHandEnd * Math.sin(angleDeg)) + halfWidth);
         
-        hrCoef = ((hr + (time.min.toFloat() / 60)) * 30) + 90;
+        hrCoef = hrAngle + 90;
         angleDeg = (hrCoef * Math.PI) / 180;
-        var hrHandX4 = ((hrHandStart * Math.cos(angleDeg)) + halfWidth);
-        var hrHandY4 = ((hrHandStart * Math.sin(angleDeg)) + halfWidth);
+        var hrHandX4 = ((handCenterCircle * Math.cos(angleDeg)) + halfWidth);
+        var hrHandY4 = ((handCenterCircle * Math.sin(angleDeg)) + halfWidth);
         
         dc.setPenWidth(pen);
         dc.drawLine(hrHandX1, hrHandY1, hrHandX4, hrHandY4);
         dc.drawLine(hrHandX2, hrHandY2, hrHandX3, hrHandY3);
-        
-        
-        hrCoef = ((hr + (time.min.toFloat() / 60)) * 30) + (handsAngle * 3);
+                
+        hrCoef = hrAngle + (handsAngle * 3);
         angleDeg = (hrCoef * Math.PI) / 180;
-        var hrHandX5 = ((hrHandSemiEnd * Math.cos(angleDeg)) + halfWidth);
-        var hrHandY5 = ((hrHandSemiEnd * Math.sin(angleDeg)) + halfWidth);
+        var hrHandX5 = ((handSemiEnd * Math.cos(angleDeg)) + halfWidth);
+        var hrHandY5 = ((handSemiEnd * Math.sin(angleDeg)) + halfWidth);
         
-        hrCoef = ((hr + (time.min.toFloat() / 60)) * 30) - (handsAngle * 3);
+        hrCoef = hrAngle - (handsAngle * 3);
         angleDeg = (hrCoef * Math.PI) / 180;
-        var hrHandX6 = ((hrHandSemiEnd * Math.cos(angleDeg)) + halfWidth);
-        var hrHandY6 = ((hrHandSemiEnd * Math.sin(angleDeg)) + halfWidth);
+        var hrHandX6 = ((handSemiEnd * Math.cos(angleDeg)) + halfWidth);
+        var hrHandY6 = ((handSemiEnd * Math.sin(angleDeg)) + halfWidth);
         
         dc.setColor(frColor, Gfx.COLOR_TRANSPARENT);
         dc.fillPolygon([[hrHandX1, hrHandY1], [hrHandX2, hrHandY2], [hrHandX6, hrHandY6], [hrHandX5, hrHandY5]]);
@@ -254,45 +261,83 @@ class MationView extends WatchUi.WatchFace {
         dc.drawLine(hrHandX1, hrHandY1, hrHandX5, hrHandY5);
         dc.drawLine(hrHandX2, hrHandY2, hrHandX6, hrHandY6);
         
-        /* angleDeg = (angle * Math.PI) / 180;
-        pointX = ((halfWidth * Math.cos(angleDeg)) + halfWidth);
-        pointY = ((halfWidth * Math.sin(angleDeg)) + halfWidth); */
+        // minutes
+        handsAngle = 2;
+        dc.setColor(App.getApp().getProperty("HandsBottomColor"), Gfx.COLOR_TRANSPARENT);       
+        var minHandEnd = halfWidth - 15;    
+            
+        var minAngle = (time.min * 6) - 90;
+        var minCoef = minAngle + handsAngle;
         
-        // var hrHandX1 = (halfHandSize * Math.cos(angleDeg)) + halfWidth;
-        // var hrHandY1 = (halfHandSize * Math.cos(angleDeg)) + halfWidth;
+        angleDeg = (minCoef * Math.PI) / 180;
+        var minHandX1 = ((minHandEnd * Math.cos(angleDeg)) + halfWidth);
+        var minHandY1 = ((minHandEnd * Math.sin(angleDeg)) + halfWidth);
+
+        minCoef = minAngle + 270;
+        angleDeg = (minCoef * Math.PI) / 180;
+        var minHandX3 = ((handCenterCircle * Math.cos(angleDeg)) + halfWidth);
+        var minHandY3 = ((handCenterCircle * Math.sin(angleDeg)) + halfWidth);
         
-       // var hrHandX2 = (halfHandSize * Math.cos(angleDeg2)) + halfWidth;
-       // var hrHandY2 = (halfHandSize * Math.cos(angleDeg2)) + halfWidth;
+        minCoef = minAngle - handsAngle;
+        angleDeg = (minCoef * Math.PI) / 180;
+        var minHandX2 = ((minHandEnd * Math.cos(angleDeg)) + halfWidth);
+        var minHandY2 = ((minHandEnd * Math.sin(angleDeg)) + halfWidth);
         
-        // var hrHandX3 = (halfWidth * Math.cos(angleDeg)) + halfWidth;
-        // var hrHandY3 = (halfWidth * Math.cos(angleDeg)) + halfWidth;
+        minCoef = minAngle + 90;
+        angleDeg = (minCoef * Math.PI) / 180;
+        var minHandX4 = ((handCenterCircle * Math.cos(angleDeg)) + halfWidth);
+        var minHandY4 = ((handCenterCircle * Math.sin(angleDeg)) + halfWidth);
+
+        dc.drawLine(minHandX1, minHandY1, minHandX4, minHandY4);
+        dc.drawLine(minHandX2, minHandY2, minHandX3, minHandY3);
         
-        // var hrHandX4 = (halfWidth * Math.cos(angleDeg2)) + halfWidth;
-        // var hrHandY4 = (halfWidth * Math.cos(angleDeg2)) + halfWidth;
+        minCoef = minAngle + (handsAngle * 3);
+        angleDeg = (minCoef * Math.PI) / 180;
+        var minHandX5 = ((handSemiEnd * Math.cos(angleDeg)) + halfWidth);
+        var minHandY5 = ((handSemiEnd * Math.sin(angleDeg)) + halfWidth);
         
+        minCoef = minAngle - (handsAngle * 3);
+        angleDeg = (minCoef * Math.PI) / 180;
+        var minHandX6 = ((handSemiEnd * Math.cos(angleDeg)) + halfWidth);
+        var minHandY6 = ((handSemiEnd * Math.sin(angleDeg)) + halfWidth);
         
-        //dc.fillPolygon([[hrHandX1, hrHandY1], [hrHandX2, hrHandY2], [hrHandX3, hrHandY3], [hrHandX4, hrHandY4]]);
+        dc.setColor(frColor, Gfx.COLOR_TRANSPARENT);
+        dc.fillPolygon([[minHandX1, minHandY1], [minHandX2, minHandY2], [minHandX6, minHandY6], [minHandX5, minHandY5]]);
         
+        dc.drawLine(minHandX1, minHandY1, minHandX2, minHandY2);
+        dc.drawLine(minHandX1, minHandY1, minHandX5, minHandY5);
+        dc.drawLine(minHandX2, minHandY2, minHandX6, minHandY6);    
         
-        
-        //dc.fillPolygon([[hrHandX1, hrHandY1], [hrHandX3, hrHandY3]]); 
-        var minHand = halfWidth - 15;
-        var minutes = (time.min * 6) - 90;
-        angleDeg = (minutes * Math.PI) / 180;
-        var minHandX1 = ((minHand * Math.cos(angleDeg)) + halfWidth);
-        var minHandY1 = ((minHand * Math.sin(angleDeg)) + halfWidth);
-        
-        // dc.drawLine(halfWidth, halfWidth, minHandX1, minHandY1);
-       
+        // seconds
+        if (App.getApp().getProperty("ShowSeconds") && isAwake) {
+            var secAngle = (time.sec * 6) - 90;
+            angleDeg = (secAngle * Math.PI) / 180;
+            var secHandX1 = ((minHandEnd * Math.cos(angleDeg)) + halfWidth);
+            var secHandY1 = ((minHandEnd * Math.sin(angleDeg)) + halfWidth);
+            
+            dc.setColor(themeColor, Gfx.COLOR_TRANSPARENT);
+            dc.drawLine(halfWidth, halfWidth, secHandX1, secHandY1);
+        } 
     }
 
     function onPartialUpdate(dc) {
         if (App.getApp().getProperty("ShowSeconds")) {
-            dc.setClip(secPosX - secFontWidth, secPosY - 2, secFontWidth, secFontHeight);
+            /* dc.setClip(secPosX - secFontWidth, secPosY - 2, secFontWidth, secFontHeight);
             dc.setColor(frColor, bgColor);
             dc.clear();
             var today = Gregorian.info(Time.now(), Time.FORMAT_MEDIUM);
             dc.drawText(secPosX, secPosY, Gfx.FONT_TINY, today.sec.format("%02d"), Gfx.TEXT_JUSTIFY_RIGHT); // seconds
+            
+            var time = Gregorian.info(Time.now(), Time.FORMAT_SHORT);
+            var minHandEnd = halfWidth - 15; 
+            var secAngle = (time.sec * 6) - 90;
+            var angleDeg = (secAngle * Math.PI) / 180;
+            var secHandX1 = ((minHandEnd * Math.cos(angleDeg)) + halfWidth);
+            var secHandY1 = ((minHandEnd * Math.sin(angleDeg)) + halfWidth);
+            
+            dc.setColor(themeColor, Gfx.COLOR_TRANSPARENT);
+            dc.drawLine(halfWidth, halfWidth, secHandX1, secHandY1); 
+            */
         }
     }
 
@@ -305,11 +350,13 @@ class MationView extends WatchUi.WatchFace {
 
     // The user has just looked at their watch. Timers and animations may be started here.
     function onExitSleep() {
-
+        isAwake = true;     // TEST
     }
 
     // Terminate any active timers and prepare for slow updates.
     function onEnterSleep() {
+        isAwake = false;        // TEST
+        WatchUi.requestUpdate();     // TEST
     }
     
     
@@ -483,77 +530,6 @@ class MationView extends WatchUi.WatchFace {
         };
     }
 
-    function drawSunsetSunriseLine(xPos, yPos, dc, today) {
-        if ((sunriseMoment != null) && (sunsetMoment != null)) {
-            var rLocal = halfWidth - 2;
-
-            // BLUE & GOLDEN HOUR
-            if (App.getApp().getProperty("ShowGoldenBlueHours")) {
-                drawDialLine(
-                    halfWidth,
-                    halfWidth,
-                    rLocal,
-                    sc.momentToInfo(blueAmMoment),
-                    sc.momentToInfo(bluePmMoment),
-                    App.getApp().getProperty("DaylightProgessWidth"),
-                    App.getApp().getProperty("BlueHourColor"),
-                    dc
-                );
-
-                // NORMAL SUN = GOLDEN COLOR
-                drawDialLine(
-                    halfWidth,
-                    halfWidth,
-                    rLocal,
-                    sc.momentToInfo(sunriseMoment),
-                    sc.momentToInfo(sunsetMoment),
-                    App.getApp().getProperty("DaylightProgessWidth"),
-                    App.getApp().getProperty("GoldenHourColor"),
-                    dc
-                );
-
-                // GOLDEN = NORMAL COLOR
-                drawDialLine(
-                    halfWidth,
-                    halfWidth,
-                    rLocal,
-                    sc.momentToInfo(goldenAmMoment),
-                    sc.momentToInfo(goldenPmMoment),
-                    App.getApp().getProperty("DaylightProgessWidth"),
-                    themeColor,
-                    dc
-                );
-            } else { // JUST NORMAL SUN
-                drawDialLine(
-                    halfWidth,
-                    halfWidth,
-                    rLocal,
-                    sc.momentToInfo(sunriseMoment),
-                    sc.momentToInfo(sunsetMoment),
-                    App.getApp().getProperty("DaylightProgessWidth"),
-                    themeColor,
-                    dc
-                );
-            }
-        }
-    }
-
-
-    // draw the line by the parametrs
-    function drawDialLine(arcX, arcY, radius, momentStart, momentEnd, penWidth, color, dc) {
-        var angleCoef = 15;
-        dc.setPenWidth(penWidth);
-        dc.setColor(color, Gfx.COLOR_TRANSPARENT);
-
-        var startDecimal = momentStart.hour + (momentStart.min.toDouble() / 60);
-        var lineStart = 270 - (startDecimal * angleCoef);
-
-        var endDecimal = momentEnd.hour + (momentEnd.min.toDouble() / 60);
-        var lineEnd = 270 - (endDecimal * angleCoef);
-
-        dc.drawArc(arcX, arcY, radius, Gfx.ARC_CLOCKWISE, lineStart, lineEnd);
-    }
-
 
     // draw next sun event
     function drawNextSunTime(xPos, yPos, dc, position) {
@@ -645,7 +621,6 @@ class MationView extends WatchUi.WatchFace {
                 var value = getFormattedTime(nextSunEvent.hour, nextSunEvent.min); // App.getApp().getFormattedTime(hour, min);
                 value = value[:formatted] + value[:amPm];
                 dc.setColor(frColor, Gfx.COLOR_TRANSPARENT);
-                //dc.drawText(xPos + 20, yPos - 15, fntDataFields, value, Gfx.TEXT_JUSTIFY_LEFT);
                 dc.drawText(xPos + 21, yPos - 15, fntDataFields, value, Gfx.TEXT_JUSTIFY_LEFT);
             }
         }
@@ -674,28 +649,8 @@ class MationView extends WatchUi.WatchFace {
     // Will draw bell if is alarm set
     function drawBell(dc) {
         if (settings.alarmCount > 0) {
-            var xPos = dc.getWidth() / 2;
-            var yPos = ((dc.getHeight() / 6).toNumber() * 4) + 2;
             dc.setColor(frColor, bgColor);
-            dc.fillCircle(xPos, yPos, 7);
-            // dc.drawText(posX - 10, posY - 18, fntIcons, ":", Gfx.TEXT_JUSTIFY_LEFT);
-
-            // stands
-            dc.setPenWidth(3);
-            dc.drawLine(xPos - 5, yPos, xPos - 7, yPos + 7);
-            dc.drawLine(xPos + 5, yPos, xPos + 7, yPos + 7);
-
-            dc.setPenWidth(2);
-            dc.drawLine(xPos - 5, yPos - 7, xPos - 9, yPos - 3);
-            dc.drawLine(xPos + 6, yPos - 7, xPos + 10, yPos - 3);
-
-            dc.setColor(bgColor, frColor);
-            dc.fillCircle(xPos, yPos, 5);
-
-            // hands
-            dc.setColor(frColor, bgColor);
-            dc.drawLine(xPos, yPos, xPos, yPos - 5);
-            dc.drawLine(xPos, yPos, xPos - 2, yPos + 4);
+            dc.drawText(halfWidth - 10, 80, fntIcons, ":", Gfx.TEXT_JUSTIFY_LEFT);
         }
     }
 
@@ -719,7 +674,7 @@ class MationView extends WatchUi.WatchFace {
         // hide the middle of the net to shows just pieces on the edge of the screen
         dc.setColor(bgColor, Gfx.COLOR_TRANSPARENT);
         dc.drawCircle(halfWidth, halfWidth, halfWidth - 1);
-        dc.fillCircle(halfWidth, halfWidth, halfWidth - App.getApp().getProperty("SmallHoursIndicatorSize"));
+        dc.fillCircle(halfWidth, halfWidth, halfWidth - 6);
 
         // draw the master pieces in 24, 12, 6, 18 hours point
         var masterPointLen = 12;
@@ -769,7 +724,6 @@ class MationView extends WatchUi.WatchFace {
         if (is240dev && (stepsCount > 999) && ((position == 2) || (position == 3))){
             stepsCount = (info.steps / 1000.0).format("%.1f").toString() + "k";
         }
-        //dc.drawText(posX + 22, posY, fntDataFields, stepsCount.toString(), Gfx.TEXT_JUSTIFY_LEFT);
         dc.drawText(posX + 22, posY, fntDataFields, stepsCount.toString(), Gfx.TEXT_JUSTIFY_LEFT);
     }
     
@@ -854,10 +808,8 @@ class MationView extends WatchUi.WatchFace {
     // Draw BT connection status
     function drawBtConnection(dc) {
         if ((settings has : phoneConnected) && (settings.phoneConnected)) {
-            // var radius = 5;
             dc.setColor(Gfx.COLOR_BLUE, Gfx.COLOR_TRANSPARENT);
-            dc.drawText(halfWidth - 17, dc.getHeight() - Gfx.getFontHeight(Gfx.FONT_TINY) - 26, fntIcons, "8", Gfx.TEXT_JUSTIFY_LEFT);
-            // dc.fillCircle((dc.getWidth() / 2) - 9, dc.getHeight() - Gfx.getFontHeight(Gfx.FONT_TINY) - (radius * 3), radius);
+            dc.drawText(halfWidth - 26, dc.getHeight() - 30, fntIcons, "8", Gfx.TEXT_JUSTIFY_LEFT);
         }
     }
 
@@ -865,10 +817,8 @@ class MationView extends WatchUi.WatchFace {
     // Draw notification alarm
     function drawNotification(dc) {
         if ((settings has : notificationCount) && (settings.notificationCount)) {
-            // var radius = 5;
             dc.setColor(Gfx.COLOR_RED, Gfx.COLOR_TRANSPARENT);
-            dc.drawText(halfWidth - 1, dc.getHeight() - Gfx.getFontHeight(Gfx.FONT_TINY) - 26, fntIcons, "5", Gfx.TEXT_JUSTIFY_LEFT);
-            // dc.fillCircle((dc.getWidth() / 2) + 6, dc.getHeight() - Gfx.getFontHeight(Gfx.FONT_TINY) - (radius * 3), radius);
+            dc.drawText(halfWidth + 8, dc.getHeight() - 30, fntIcons, "5", Gfx.TEXT_JUSTIFY_LEFT);
         }
     }
 
@@ -942,35 +892,86 @@ class MationView extends WatchUi.WatchFace {
                 }
         }
     }
+    
+    function drawMeter(dc, from, to) {
+        dc.setColor(App.getApp().getProperty("HandsBottomColor"), bgColor);
+        
+        var angleDeg = 0;
+        var pointX1 =  0;
+        var pointY1 = 0;
+        var pointX2 = 0;
+        var pointY2 = 0;
+        
+        var startCircle = halfWidth - 30;
+        var masterEnd = startCircle + 12;
+        var bigEnd = startCircle + 8;
+        var smallEnd = startCircle + 3;
+        
+        dc.setPenWidth(2);
+        for(var angle = from; angle < to; angle+=3) {
+            angleDeg = (angle * Math.PI) / 180;
+            pointX1 = ((startCircle * Math.cos(angleDeg)) + halfWidth);
+            pointY1 = ((startCircle * Math.sin(angleDeg)) + halfWidth);
+            
+            pointX2 = ((smallEnd * Math.cos(angleDeg)) + halfWidth);
+            pointY2 = ((smallEnd * Math.sin(angleDeg)) + halfWidth);
+            
+            dc.drawLine(pointX1, pointY1, pointX2, pointY2);
+        }
+        dc.setColor(Gfx.COLOR_LT_GRAY, bgColor);
+        dc.setPenWidth(2);
+        for(var angle = from; angle < to; angle+=9) {
+            angleDeg = (angle * Math.PI) / 180;
+            pointX1 = ((startCircle * Math.cos(angleDeg)) + halfWidth);
+            pointY1 = ((startCircle * Math.sin(angleDeg)) + halfWidth);
+            
+            pointX2 = ((bigEnd * Math.cos(angleDeg)) + halfWidth);
+            pointY2 = ((bigEnd * Math.sin(angleDeg)) + halfWidth);
+            
+            dc.drawLine(pointX1, pointY1, pointX2, pointY2);
+        }
+        
+        dc.setPenWidth(3);
+        angleDeg = (from * Math.PI) / 180;
+        pointX1 = ((startCircle * Math.cos(angleDeg)) + halfWidth);
+        pointY1 = ((startCircle * Math.sin(angleDeg)) + halfWidth);       
+        pointX2 = ((masterEnd * Math.cos(angleDeg)) + halfWidth);
+        pointY2 = ((masterEnd * Math.sin(angleDeg)) + halfWidth);  
+        dc.drawLine(pointX1, pointY1, pointX2, pointY2);
+        
+        angleDeg = ((from + 45) * Math.PI) / 180;
+        pointX1 = ((startCircle * Math.cos(angleDeg)) + halfWidth);
+        pointY1 = ((startCircle * Math.sin(angleDeg)) + halfWidth);       
+        pointX2 = ((masterEnd * Math.cos(angleDeg)) + halfWidth);
+        pointY2 = ((masterEnd * Math.sin(angleDeg)) + halfWidth);  
+        dc.drawLine(pointX1, pointY1, pointX2, pointY2);
+        
+        angleDeg = ((from + 90) * Math.PI) / 180;
+        pointX1 = ((startCircle * Math.cos(angleDeg)) + halfWidth);
+        pointY1 = ((startCircle * Math.sin(angleDeg)) + halfWidth);       
+        pointX2 = ((masterEnd * Math.cos(angleDeg)) + halfWidth);
+        pointY2 = ((masterEnd * Math.sin(angleDeg)) + halfWidth);  
+        dc.drawLine(pointX1, pointY1, pointX2, pointY2);
+        
+        
+        
+    }
 
 
     // Draw battery witch % state
-    function drawBattery(xPos, yPos, dc, position, time, inDays) {
-        if (position == 1) {
-            xPos = (is280dev ? xPos + 33 : xPos + 32);
-            yPos = (is240dev ? yPos - 18 : yPos - 16);
-        }
-        if (position == 2) {
-            xPos = (is280dev ? xPos + 30 : xPos + 30);
-        }
-        if (is240dev && (position == 3)) {
-            xPos -= 6;
-        }
-        if (is280dev && (position == 4)) {
-            xPos += 2;
-        }
+    function drawBattery(xPos, yPos, dc, position, time, inDays) { 
         dc.setPenWidth(1);
         var batteryPercent = System.getSystemStats().battery;
         if (batteryPercent <= 10) {
             dc.setColor(Gfx.COLOR_RED, bgColor);
         } else {
-            dc.setColor(frColor, bgColor);
+            dc.setColor(App.getApp().getProperty("HandsBottomColor"), bgColor);
         }
         
         var batteryWidth = 23;
         dc.drawRectangle(xPos - 34, yPos + 4, batteryWidth, 13);    // battery
-        dc.drawRectangle(xPos + batteryWidth - 34, yPos + 8, 2, 5); // battery top
-        var batteryColor = Gfx.COLOR_GREEN;
+        // dc.drawRectangle(xPos + batteryWidth - 34, yPos + 8, 2, 5); // battery top
+        var batteryColor = App.getApp().getProperty("HandsBottomColor"); //Gfx.COLOR_GREEN;
         if (batteryPercent <= 10) {
             batteryColor = Gfx.COLOR_RED;
         } else if (batteryPercent <= 35) {
@@ -979,7 +980,7 @@ class MationView extends WatchUi.WatchFace {
 
         dc.setColor(batteryColor, bgColor);
         var batteryState = ((batteryPercent / 10) * 2).toNumber();
-        dc.fillRectangle(xPos + 1 - 34, yPos + 5, batteryState + 1, 11);
+        dc.fillRectangle(xPos - 31, yPos + 7, batteryState - 3, 7);
 
         var batText = batteryPercent.toNumber().toString() + "%";
         dc.setColor(frColor, Gfx.COLOR_TRANSPARENT);
@@ -988,14 +989,18 @@ class MationView extends WatchUi.WatchFace {
                 getRemainingBattery(time, batteryPercent);
             }
             batText = (app.getProperty("remainingBattery") == null ? "W8" : app.getProperty("remainingBattery").toString());
-        }  
-        dc.drawText(xPos + 29 - 34, yPos, fntDataFields, batText, Gfx.TEXT_JUSTIFY_LEFT);  
+        }
+        dc.setColor(App.getApp().getProperty("HandsBottomColor"), Gfx.COLOR_TRANSPARENT);
+        // dc.drawText(xPos, yPos, fntDataFields, batText, Gfx.TEXT_JUSTIFY_LEFT);
+        dc.setColor(frColor, bgColor);  
+        dc.drawText(xPos + 12, yPos, Gfx.FONT_XTINY, batText, Gfx.TEXT_JUSTIFY_CENTER);  
     }
     
     
     // set variable named remainingBattery to remaining battery in days / hours
     function getRemainingBattery(time, batteryPercent) { 
         if (System.getSystemStats().charging) {         // if charging
+            app.setProperty("batteryTime", null);
             app.setProperty("remainingBattery", "W8");  // will show up "wait" sign
         } else {
             var bat = app.getProperty("batteryTime");
@@ -1005,10 +1010,7 @@ class MationView extends WatchUi.WatchFace {
                 app.setProperty("remainingBattery", "W8");    // still waiting for battery
             } else {
                 var nowValue = time.now().value(); 
-                if (bat[1] < batteryPercent) {              // if the battery will increase (charging, F6X Solar or heat)
-                    bat = [nowValue, batteryPercent];       // will save the new battery state for next calculating round
-                    app.setProperty("batteryTime", bat);
-                } else if (bat[1] > batteryPercent) {
+                if (bat[1] > batteryPercent) {
                     var remaining = (bat[1] - batteryPercent).toFloat() / (nowValue - bat[0]).toFloat();
                     remaining = remaining * 60 * 60;    // percent consumption per hour
                     remaining = batteryPercent.toFloat() / remaining;
@@ -1026,26 +1028,10 @@ class MationView extends WatchUi.WatchFace {
 
     // draw altitude
     function drawAltitude(xPos, yPos, dc, position) {
-        if (position == 1) {
-            xPos = (is240dev ? xPos + 32 : xPos + 34);
-            yPos = (is240dev ? yPos - 18 : yPos - 16);
-        }
-        if (position == 2) {
-            xPos = ((is240dev || is280dev) ? xPos + 42 : xPos + 40);
-        }
-        if (position == 3) {
-            xPos += 8;
-        }
-
         dc.setColor(frColor, Gfx.COLOR_TRANSPARENT);
         var alt = getAltitude();
-        if (is280dev || (position == 1) || (position == 4)) {
-            alt = alt[:altitude] + alt[:unit];
-        } else {
-            alt = alt[:altitude];
-        }
-        dc.drawText(xPos - 18, yPos, fntDataFields, alt, Gfx.TEXT_JUSTIFY_LEFT);
-        //dc.drawText(xPos - 18, yPos, fntDataFields, alt, Gfx.TEXT_JUSTIFY_LEFT);
+        alt = alt[:altitude];
+        dc.drawText(xPos, yPos, Gfx.FONT_TINY, alt, Gfx.TEXT_JUSTIFY_RIGHT);
 
         // coordinates correction text to mountain picture
         xPos = xPos - 46;
@@ -1053,27 +1039,11 @@ class MationView extends WatchUi.WatchFace {
         dc.setPenWidth(2);
 
         dc.setColor(themeColor, bgColor);
-        dc.drawText(xPos, yPos - 6, fntIcons, ";", Gfx.TEXT_JUSTIFY_LEFT);
-
-        /*dc.setColor(themeColor, bgColor);
-        dc.drawLine(xPos + 1, yPos + 14, xPos + 5, yPos + 7);
-        dc.drawLine(xPos + 5, yPos + 7, xPos + 7, yPos + 10);
-        dc.drawLine(xPos + 7, yPos + 10, xPos + 11, yPos + 2);
-        dc.drawLine(xPos + 11, yPos + 2, xPos + 20, yPos + 15); */
+        dc.drawText(xPos + 40, yPos - 20, fntIcons, ";", Gfx.TEXT_JUSTIFY_RIGHT);
     }
 
     // Draw the pressure state and current pressure
     function drawPressure(xPos, yPos, dc, pressure, today, position) {
-        if (position == 1) {
-            xPos += 30;
-            yPos = (is240dev ? yPos - 18 : yPos - 16);
-        }
-        if (position == 2) {
-            xPos += 30;
-        }
-        if ((position == 3) && is240dev) {
-            xPos -= 4;
-        }
         var lastPressureLoggingTime = (app.getProperty("lastPressureLoggingTime") == null ? null : app.getProperty("lastPressureLoggingTime").toNumber());
         if ((today.min == 0) && (today.hour != lastPressureLoggingTime)) {   // grap is redrawning only in whole hour
             var baroFigure = 0;
@@ -1118,9 +1088,9 @@ class MationView extends WatchUi.WatchFace {
         }        
         
         var baroFigure = (app.getProperty("baroFigure") == null ? 0 : app.getProperty("baroFigure").toNumber());
-        drawPressureGraph(xPos - 34, yPos + 10, dc, baroFigure);
+        drawPressureGraph(xPos, yPos, dc, baroFigure);
         dc.setColor(frColor, Gfx.COLOR_TRANSPARENT);
-        dc.drawText(xPos - 6, yPos, fntDataFields, pressure.toString(), Gfx.TEXT_JUSTIFY_LEFT);
+        dc.drawText(xPos - 6, yPos, Gfx.FONT_TINY, pressure.toString(), Gfx.TEXT_JUSTIFY_LEFT);
     }
 
     // Draw small pressure graph based on baroFigure
@@ -1138,45 +1108,45 @@ class MationView extends WatchUi.WatchFace {
         dc.setColor(themeColor, bgColor);
         switch (figure) {
             case 0:
-                dc.drawLine(xPos, yPos, xPos + 22, yPos);
+                dc.drawLine(xPos - 5, yPos, xPos + 27, yPos);
             break;
 
             case 1:
-                dc.drawLine(xPos, yPos, xPos + 11, yPos);
-                dc.drawLine(xPos + 11, yPos, xPos + 22, yPos + 9);
+                dc.drawLine(xPos - 5, yPos - 7, xPos + 11, yPos - 7);
+                dc.drawLine(xPos + 11, yPos - 7, xPos + 25, yPos + 7);
             break;
 
             case 2:
-                dc.drawLine(xPos, yPos, xPos + 11, yPos);
-                dc.drawLine(xPos + 11, yPos, xPos + 22, yPos - 9);
+                dc.drawLine(xPos - 5, yPos, xPos + 11, yPos);
+                dc.drawLine(xPos + 11, yPos, xPos + 25, yPos - 12);
             break;
 
             case 3:
-                dc.drawLine(xPos, yPos - 9, xPos + 22, yPos + 9);
+                dc.drawLine(xPos - 8, yPos - 12, xPos + 25, yPos + 6);
             break;
 
             case 4:
-                dc.drawLine(xPos, yPos - 9, xPos + 11, yPos);
-                dc.drawLine(xPos + 11, yPos, xPos + 22, yPos);
+                dc.drawLine(xPos -3 , yPos - 12, xPos + 11, yPos);
+                dc.drawLine(xPos + 11, yPos, xPos + 27, yPos);
             break;
 
             case 5:
-                dc.drawLine(xPos, yPos - 9, xPos + 11, yPos);
-                dc.drawLine(xPos + 11, yPos, xPos + 22, yPos - 9);
+                dc.drawLine(xPos - 3, yPos - 12, xPos + 11, yPos);
+                dc.drawLine(xPos + 11, yPos, xPos + 25, yPos - 12);
             break;
 
             case 6:
-                dc.drawLine(xPos, yPos + 9, xPos + 11, yPos);
-                dc.drawLine(xPos + 11, yPos, xPos + 22, yPos + 9);
+                dc.drawLine(xPos - 5, yPos + 4, xPos + 11, yPos - 8);
+                dc.drawLine(xPos + 11, yPos - 8, xPos + 25, yPos + 4);
             break;
 
             case 7:
-                dc.drawLine(xPos, yPos + 9, xPos + 11, yPos);
-                dc.drawLine(xPos + 11, yPos, xPos + 22, yPos);
+                dc.drawLine(xPos - 3, yPos + 6, xPos + 11, yPos - 6);
+                dc.drawLine(xPos + 11, yPos - 6, xPos + 27, yPos - 6);
             break;
 
             case 8:
-                dc.drawLine(xPos, yPos + 9, xPos + 22, yPos - 9);
+                dc.drawLine(xPos - 3, yPos + 5, xPos + 25, yPos - 19);
             break;
         }
     }
@@ -1346,100 +1316,72 @@ class MationView extends WatchUi.WatchFace {
         }
         app.setProperty("pressure0", pressureValue);
     }
-
-
-    // Draw filled pointer like a trinagle to dial by the settings
-    function drawPointToDialFilled(dc, color, timeInfo) {
-        var angleToNrCorrection = 5.99;
-        var daylightProgessWidth = App.getApp().getProperty("DaylightProgessWidth");
-        var rLocal = halfWidth - daylightProgessWidth + 2;  // line in day light
-        dc.setColor(color, Gfx.COLOR_TRANSPARENT);
-
-        var secondTimeCoef = ((timeInfo.hour + (timeInfo.min.toFloat() / 60) + angleToNrCorrection) * 15);
-        // the top  point touching the DaylightProgessWidth
-        var angleDeg = (secondTimeCoef * Math.PI) / 180;
-        var trianglPointX1 = ((rLocal * Math.cos(angleDeg)) + halfWidth);
-        var trianglPointY1 = ((rLocal * Math.sin(angleDeg)) + halfWidth);
+    
+    function drawPressureToMeter(dc) {
+        var startCircle = halfWidth - 12;
+        var endCircle = halfWidth - 37;
+    
+        dc.setPenWidth(3);
+        dc.setColor(App.getApp().getProperty("HandsBottomColor"), Gfx.COLOR_TRANSPARENT);
+        dc.drawText((halfWidth / 2) - 10, dc.getHeight() - 60, Gfx.FONT_XTINY, 950, Gfx.TEXT_JUSTIFY_LEFT);
+        dc.drawText((halfWidth / 2) - 10, 40, Gfx.FONT_XTINY, 1050, Gfx.TEXT_JUSTIFY_LEFT);
+        dc.setColor(themeColor, Gfx.COLOR_TRANSPARENT);
         
-        var secondTimeTriangleCircle = halfWidth - (daylightProgessWidth + App.getApp().getProperty("CurrentTimePointerWidth"));
-        // one of the lower point of tringle        
-        var trianglePointAngle = secondTimeCoef - 4;
-        angleDeg = (trianglePointAngle * Math.PI) / 180;
-        var trianglPointX2 = ((secondTimeTriangleCircle * Math.cos(angleDeg)) + halfWidth);
-        var trianglPointY2 = ((secondTimeTriangleCircle * Math.sin(angleDeg)) + halfWidth);
+        var pressure = getPressure().toFloat();
+        var end = 225 - ((pressure - 950) * 0.9);
+        dc.drawArc(halfWidth, halfWidth, 120, Gfx.ARC_CLOCKWISE, 225, end);
         
-        // one of the higher point of tringle
-        trianglePointAngle = secondTimeCoef + 4;
-        angleDeg = (trianglePointAngle * Math.PI) / 180;
-        var trianglPointX3 = ((secondTimeTriangleCircle * Math.cos(angleDeg)) + halfWidth);
-        var trianglPointY3 = ((secondTimeTriangleCircle * Math.sin(angleDeg)) + halfWidth);
+        var endLine = 225 - ((1050 - pressure) * 0.9);
+        var angleDeg = (endLine * Math.PI) / 180;
+        var pointX1 = ((startCircle * Math.cos(angleDeg)) + halfWidth);
+        var pointY1 = ((startCircle * Math.sin(angleDeg)) + halfWidth);       
+        var pointX2 = ((endCircle * Math.cos(angleDeg)) + halfWidth);
+        var pointY2 = ((endCircle * Math.sin(angleDeg)) + halfWidth);  
+        dc.drawLine(pointX1, pointY1, pointX2, pointY2);        
         
-        dc.fillPolygon([[trianglPointX1, trianglPointY1], [trianglPointX2, trianglPointY2], [trianglPointX3, trianglPointY3]]); 
+        angleDeg = ((endLine + 4) * Math.PI) / 180;
+        pointX1 = ((startCircle * Math.cos(angleDeg)) + halfWidth);
+        pointY1 = ((startCircle * Math.sin(angleDeg)) + halfWidth);       
+        pointX2 = ((endCircle * Math.cos(angleDeg)) + halfWidth);
+        pointY2 = ((endCircle * Math.sin(angleDeg)) + halfWidth);   
+        dc.drawLine(pointX1, pointY1, pointX2, pointY2);             
     }
     
-    // Draw filled pointer like a trinagle to dial by the settings
-    function drawPointToDialTransparent(dc, color, timeInfo) {
-        var angleToNrCorrection = 5.99;
-        var daylightProgessWidth = App.getApp().getProperty("DaylightProgessWidth");
-        var rLocal = halfWidth - daylightProgessWidth + 2;  // line in day light
-        dc.setPenWidth(2);
-        dc.setColor(color, Gfx.COLOR_TRANSPARENT);
-
-        var secondTimeCoef = ((timeInfo.hour + (timeInfo.min.toFloat() / 60) + angleToNrCorrection) * 15);
-        // the top  point touching the DaylightProgessWidth
-        var angleDeg = (secondTimeCoef * Math.PI) / 180;
-        var trianglPointX1 = ((rLocal * Math.cos(angleDeg)) + halfWidth);
-        var trianglPointY1 = ((rLocal * Math.sin(angleDeg)) + halfWidth);
-        
-        var secondTimeTriangleCircle = halfWidth - (daylightProgessWidth + App.getApp().getProperty("CurrentTimePointerWidth"));
-        // one of the lower point of tringle        
-        var trianglePointAngle = secondTimeCoef - 4;
-        angleDeg = (trianglePointAngle * Math.PI) / 180;
-        var trianglPointX2 = ((secondTimeTriangleCircle * Math.cos(angleDeg)) + halfWidth);
-        var trianglPointY2 = ((secondTimeTriangleCircle * Math.sin(angleDeg)) + halfWidth);
-        
-        // one of the higher point of tringle
-        trianglePointAngle = secondTimeCoef + 4;
-        angleDeg = (trianglePointAngle * Math.PI) / 180;
-        var trianglPointX3 = ((secondTimeTriangleCircle * Math.cos(angleDeg)) + halfWidth);
-        var trianglPointY3 = ((secondTimeTriangleCircle * Math.sin(angleDeg)) + halfWidth);
-        
-        dc.drawLine(trianglPointX1, trianglPointY1, trianglPointX2, trianglPointY2);
-        dc.drawLine(trianglPointX2, trianglPointY2, trianglPointX3, trianglPointY3);
-        dc.drawLine(trianglPointX3, trianglPointY3, trianglPointX1, trianglPointY1);
-    }
     
-    // Draw pointer like a Suunto pointer to dial by the settings
-    function drawSuuntoLikePointer(dc, color, timeInfo) {
-        var angleToNrCorrection = 5.95;
-        var daylightProgessWidth = (App.getApp().getProperty("DaylightProgessWidth") / 2).toNumber();
-        dc.setColor(color, Gfx.COLOR_TRANSPARENT);
+    function drawAltToMeter(dc) {
+        var startCircle = halfWidth - 12;
+        var endCircle = halfWidth - 37;
         
-        dc.setPenWidth(daylightProgessWidth);
-        var secondTimeCoef = ((timeInfo.hour + (timeInfo.min.toFloat() / 60)) * 15);
-        var secondTimeStart = 272 - secondTimeCoef; // 270 was corrected better placing of second time holder
-        var secondTimeEnd = 268 - secondTimeCoef;   // 270 was corrected better placing of second time holder       
-        dc.drawArc(halfWidth, halfWidth, halfWidth, Gfx.ARC_CLOCKWISE, secondTimeStart, secondTimeEnd);
+        var lowAlt = 0;
+        var topAlt = 1000;
+        dc.setPenWidth(3);
+        dc.setColor(App.getApp().getProperty("HandsBottomColor"), Gfx.COLOR_TRANSPARENT);
+        dc.drawText(dc.getWidth() - 66, dc.getHeight() - 60, Gfx.FONT_XTINY, lowAlt.toString(), Gfx.TEXT_JUSTIFY_RIGHT);
+        dc.drawText(dc.getWidth() - 66, 40, Gfx.FONT_XTINY, topAlt.toString(), Gfx.TEXT_JUSTIFY_RIGHT);
+        dc.setColor(themeColor, Gfx.COLOR_TRANSPARENT);
         
-        // the top  point touching the DaylightProgessWidth
-        var secondTimeTriangleCircle = halfWidth - (daylightProgessWidth + App.getApp().getProperty("CurrentTimePointerWidth"));
-        secondTimeCoef = ((timeInfo.hour + (timeInfo.min.toFloat() / 60) + angleToNrCorrection) * 15);
-        var angleDeg = (secondTimeCoef * Math.PI) / 180;
-        var trianglPointX1 = ((secondTimeTriangleCircle * Math.cos(angleDeg)) + halfWidth);
-        var trianglPointY1 = ((secondTimeTriangleCircle * Math.sin(angleDeg)) + halfWidth);
+        var alt = getAltitude();
+        alt = alt[:altitude].toNumber();
+        if ((lowAlt.toNumber() < alt) && (topAlt.toNumber() > alt))  {
+            var degreeOnScalePerMeter = (90.toFloat() / (topAlt - lowAlt)).toFloat();
+            var end = (alt - lowAlt) * degreeOnScalePerMeter;
+            var endAngle = 315 + end;
+            dc.drawArc(halfWidth, halfWidth, 120, Gfx.ARC_COUNTER_CLOCKWISE, 315, endAngle);
+            
+            var angleDeg = ((45 - end) * Math.PI) / 180;
+            var pointX1 = ((startCircle * Math.cos(angleDeg)) + halfWidth);
+            var pointY1 = ((startCircle * Math.sin(angleDeg)) + halfWidth);       
+            var pointX2 = ((endCircle * Math.cos(angleDeg)) + halfWidth);
+            var pointY2 = ((endCircle * Math.sin(angleDeg)) + halfWidth);  
+            dc.drawLine(pointX1, pointY1, pointX2, pointY2);        
+            
+            angleDeg = ((45 - end - 4) * Math.PI) / 180;
+            pointX1 = ((startCircle * Math.cos(angleDeg)) + halfWidth);
+            pointY1 = ((startCircle * Math.sin(angleDeg)) + halfWidth);       
+            pointX2 = ((endCircle * Math.cos(angleDeg)) + halfWidth);
+            pointY2 = ((endCircle * Math.sin(angleDeg)) + halfWidth);  
+            dc.drawLine(pointX1, pointY1, pointX2, pointY2);        
+        }       
+    }
         
-        // one of the lower point of tringle        
-        var trianglePointAngle = secondTimeCoef - 3;
-        angleDeg = (trianglePointAngle * Math.PI) / 180;
-        var trianglPointX2 = ((halfWidth * Math.cos(angleDeg)) + halfWidth);
-        var trianglPointY2 = ((halfWidth * Math.sin(angleDeg)) + halfWidth);
-        
-        // one of the higher point of tringle
-        trianglePointAngle = secondTimeCoef + 3;
-        angleDeg = (trianglePointAngle * Math.PI) / 180;
-        var trianglPointX3 = ((halfWidth * Math.cos(angleDeg)) + halfWidth);
-        var trianglPointY3 = ((halfWidth * Math.sin(angleDeg)) + halfWidth);
-        
-        dc.fillPolygon([[trianglPointX1, trianglPointY1], [trianglPointX2, trianglPointY2], [trianglPointX3, trianglPointY3]]); 
-    }   
 }

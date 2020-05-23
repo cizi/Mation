@@ -13,6 +13,29 @@
             <listEntry value="0xFFFFFF">@Strings.ColorWhite</listEntry>
         </settingConfig>
     </setting>
+    
+    <setting propertyKey="@Properties.HandsBottomColor" title="@Strings.HandsBottomColorTitle">
+        <settingConfig type="list">
+            <listEntry value="0xFFFFFF">@Strings.ColorWhite</listEntry>
+            <listEntry value="0x000000">@Strings.ColorBlack</listEntry>
+            <listEntry value="0x0000FF">@Strings.ColorDarkBlue</listEntry>
+            <listEntry value="0x00AAFF">@Strings.ColorBlue</listEntry>
+            <listEntry value="0x0055FF">@Strings.ColorLightBlue</listEntry>            
+            <listEntry value="0xFF0000">@Strings.ColorRed</listEntry>
+            <listEntry value="0xFF0055">@Strings.ColorLightRed</listEntry>            
+            <listEntry value="0xFFFF00">@Strings.ColorDarkYellow</listEntry>
+            <listEntry value="0xFFFF55">@Strings.ColorYellow</listEntry>
+            <listEntry value="0xFFFFAA">@Strings.ColorLightYellow</listEntry>            
+            <listEntry value="0xAAAAAA">@Strings.ColorLightGrey</listEntry>
+            <listEntry value="0x555555">@Strings.ColorDarkGrey</listEntry>
+            <listEntry value="0xFF5500">@Strings.ColorOrange</listEntry>
+            <listEntry value="0xFF5555">@Strings.ColorLightOrange</listEntry>            
+            <listEntry value="0x00AA00">@Strings.ColorDarkGreen</listEntry>
+            <listEntry value="0x00FF00">@Strings.ColorGreen</listEntry>
+            <listEntry value="0x00FFAA">@Strings.ColorLightGreen</listEntry>            
+            <listEntry value="0xFF00FF">@Strings.ColorPink</listEntry>
+        </settingConfig>
+    </setting>
 
     <setting propertyKey="@Properties.DateFormat" title="@Strings.DateFormatTitle">
         <settingConfig type="list">
@@ -29,6 +52,10 @@
     </setting>
     
     <setting propertyKey="@Properties.ShowSeconds" title="@Strings.ShowSecondsTitle">
+        <settingConfig type="boolean" />
+    </setting>
+    
+    <setting propertyKey="@Properties.ShowBatteryInDays" title="@Strings.ShowBatteryInDaysTitle">
         <settingConfig type="boolean" />
     </setting>
     
@@ -63,11 +90,10 @@
         </settingConfig>
     </setting>
 
-    <setting propertyKey="@Properties.Opt1" title="@Strings.Opt1Title">
+    <!-- setting propertyKey="@Properties.Opt1" title="@Strings.Opt1Title">
         <settingConfig type="list">
             <listEntry value="0">@Strings.MoonPhase</listEntry>
             <listEntry value="1">@Strings.SunsetSunrise</listEntry>
-            <listEntry value="9">@Strings.NextSunEvent</listEntry>
             <listEntry value="2">@Strings.Floors</listEntry>
             <listEntry value="3">@Strings.Calories</listEntry>
             <listEntry value="4">@Strings.Steps</listEntry>
@@ -80,7 +106,7 @@
             <listEntry value="10">@Strings.SecondTime</listEntry>
             <listEntry value="100">@Strings.OptionDisabled</listEntry>
         </settingConfig>
-    </setting>
+    </setting>  
 
     <setting propertyKey="@Properties.Opt2" title="@Strings.Opt2Title">
         <settingConfig type="list">
@@ -120,7 +146,6 @@
         <settingConfig type="list">
         	<listEntry value="0">@Strings.MoonPhase</listEntry>
         	<listEntry value="1">@Strings.SunsetSunrise</listEntry>
-        	<listEntry value="9">@Strings.NextSunEvent</listEntry>
         	<listEntry value="2">@Strings.Floors</listEntry>
         	<listEntry value="3">@Strings.Calories</listEntry>
         	<listEntry value="4">@Strings.Steps</listEntry>
@@ -133,7 +158,7 @@
             <listEntry value="10">@Strings.SecondTime</listEntry>
             <listEntry value="100">@Strings.OptionDisabled</listEntry>
         </settingConfig>
-    </setting>
+    </setting> -->
 
     <setting propertyKey="@Properties.DaylightProgess" title="@Strings.DaylightProgessTitle">
         <settingConfig type="list">
@@ -158,123 +183,6 @@
         </settingConfig>
     </setting>
 
-    <setting propertyKey="@Properties.DaylightProgessWidth" title="@Strings.DaylightProgessWidthTitle">
-        <settingConfig type="list">
-            <listEntry value="6">@Strings.width6</listEntry>
-            <listEntry value="8">@Strings.width8</listEntry>
-            <listEntry value="10">@Strings.width10</listEntry>
-            <listEntry value="12">@Strings.width12</listEntry>
-        </settingConfig>
-    </setting>
-
-    <setting propertyKey="@Properties.CurrentTimePointer" title="@Strings.CurrentTimePointerTitle">
-        <settingConfig type="list">
-            <listEntry value="0xFFFFFF">@Strings.ColorWhite</listEntry>
-            <listEntry value="0x000000">@Strings.ColorBlack</listEntry>
-            <listEntry value="0x0000FF">@Strings.ColorDarkBlue</listEntry>
-            <listEntry value="0x00AAFF">@Strings.ColorBlue</listEntry>
-            <listEntry value="0x0055FF">@Strings.ColorLightBlue</listEntry>            
-            <listEntry value="0xFF0000">@Strings.ColorRed</listEntry>
-            <listEntry value="0xFF0055">@Strings.ColorLightRed</listEntry>            
-            <listEntry value="0xFFFF00">@Strings.ColorDarkYellow</listEntry>
-            <listEntry value="0xFFFF55">@Strings.ColorYellow</listEntry>
-            <listEntry value="0xFFFFAA">@Strings.ColorLightYellow</listEntry>            
-            <listEntry value="0xAAAAAA">@Strings.ColorLightGrey</listEntry>
-            <listEntry value="0x555555">@Strings.ColorDarkGrey</listEntry>
-            <listEntry value="0xFF5500">@Strings.ColorOrange</listEntry>
-            <listEntry value="0xFF5555">@Strings.ColorLightOrange</listEntry>            
-            <listEntry value="0x00AA00">@Strings.ColorDarkGreen</listEntry>
-            <listEntry value="0x00FF00">@Strings.ColorGreen</listEntry>
-            <listEntry value="0x00FFAA">@Strings.ColorLightGreen</listEntry>            
-            <listEntry value="0xFF00FF">@Strings.ColorPink</listEntry>
-        </settingConfig>
-    </setting>
-
-    <setting propertyKey="@Properties.ShowGoldenBlueHours" title="@Strings.ShowGoldenBlueHoursTitle">
-        <settingConfig type="boolean" />
-    </setting>
-
-    <setting propertyKey="@Properties.GoldenHourColor" title="@Strings.GoldenHourColorTitle">
-        <settingConfig type="list">
-            <listEntry value="0xFFFFFF">@Strings.ColorWhite</listEntry>
-            <listEntry value="0x000000">@Strings.ColorBlack</listEntry>
-            <listEntry value="0x0000FF">@Strings.ColorDarkBlue</listEntry>
-            <listEntry value="0x00AAFF">@Strings.ColorBlue</listEntry>
-            <listEntry value="0x0055FF">@Strings.ColorLightBlue</listEntry>            
-            <listEntry value="0xFF0000">@Strings.ColorRed</listEntry>
-            <listEntry value="0xFF0055">@Strings.ColorLightRed</listEntry>            
-            <listEntry value="0xFFFF00">@Strings.ColorDarkYellow</listEntry>
-            <listEntry value="0xFFFF55">@Strings.ColorYellow</listEntry>
-            <listEntry value="0xFFFFAA">@Strings.ColorLightYellow</listEntry>            
-            <listEntry value="0xAAAAAA">@Strings.ColorLightGrey</listEntry>
-            <listEntry value="0x555555">@Strings.ColorDarkGrey</listEntry>
-            <listEntry value="0xFF5500">@Strings.ColorOrange</listEntry>
-            <listEntry value="0xFF5555">@Strings.ColorLightOrange</listEntry>            
-            <listEntry value="0x00AA00">@Strings.ColorDarkGreen</listEntry>
-            <listEntry value="0x00FF00">@Strings.ColorGreen</listEntry>
-            <listEntry value="0x00FFAA">@Strings.ColorLightGreen</listEntry>            
-            <listEntry value="0xFF00FF">@Strings.ColorPink</listEntry>
-            <listEntry value="-1">@Strings.ColorTransparent</listEntry>
-        </settingConfig>
-    </setting>
-
-    <setting propertyKey="@Properties.BlueHourColor" title="@Strings.BlueHourColorTitle">
-        <settingConfig type="list">
-            <listEntry value="0xFFFFFF">@Strings.ColorWhite</listEntry>
-            <listEntry value="0x000000">@Strings.ColorBlack</listEntry>
-            <listEntry value="0x0000FF">@Strings.ColorDarkBlue</listEntry>
-            <listEntry value="0x00AAFF">@Strings.ColorBlue</listEntry>
-            <listEntry value="0x0055FF">@Strings.ColorLightBlue</listEntry>            
-            <listEntry value="0xFF0000">@Strings.ColorRed</listEntry>
-            <listEntry value="0xFF0055">@Strings.ColorLightRed</listEntry>            
-            <listEntry value="0xFFFF00">@Strings.ColorDarkYellow</listEntry>
-            <listEntry value="0xFFFF55">@Strings.ColorYellow</listEntry>
-            <listEntry value="0xFFFFAA">@Strings.ColorLightYellow</listEntry>            
-            <listEntry value="0xAAAAAA">@Strings.ColorLightGrey</listEntry>
-            <listEntry value="0x555555">@Strings.ColorDarkGrey</listEntry>
-            <listEntry value="0xFF5500">@Strings.ColorOrange</listEntry>
-            <listEntry value="0xFF5555">@Strings.ColorLightOrange</listEntry>            
-            <listEntry value="0x00AA00">@Strings.ColorDarkGreen</listEntry>
-            <listEntry value="0x00FF00">@Strings.ColorGreen</listEntry>
-            <listEntry value="0x00FFAA">@Strings.ColorLightGreen</listEntry>            
-            <listEntry value="0xFF00FF">@Strings.ColorPink</listEntry>
-            <listEntry value="-1">@Strings.ColorTransparent</listEntry>
-        </settingConfig>
-    </setting>
-    
-    <setting propertyKey="@Properties.CurrentTimePointerType" title="@Strings.CurrentTimePointerTypeTitle">
-        <settingConfig type="list">
-        	<listEntry value="1">@Strings.PointIn</listEntry>
-            <listEntry value="2">@Strings.ArrowFilled</listEntry>
-            <listEntry value="3">@Strings.ArrowTransparent</listEntry>
-            <listEntry value="4">@Strings.LikeASuunto</listEntry>
-            <listEntry value="100">@Strings.OptionDisabled</listEntry>
-        </settingConfig>
-    </setting>
-
-    <setting propertyKey="@Properties.CurrentTimePointerWidth" title="@Strings.CurrentTimePointerWidthTitle">
-        <settingConfig type="list">
-        	<listEntry value="4">@Strings.width4</listEntry>
-            <listEntry value="6">@Strings.width6</listEntry>
-            <listEntry value="8">@Strings.width8</listEntry>
-            <listEntry value="10">@Strings.width10</listEntry>
-            <listEntry value="12">@Strings.width12</listEntry>
-            <listEntry value="14">@Strings.width14</listEntry>
-            <listEntry value="16">@Strings.width16</listEntry>
-            <listEntry value="18">@Strings.width18</listEntry>
-            <listEntry value="20">@Strings.width20</listEntry>
-        </settingConfig>
-    </setting>
-
-    <setting propertyKey="@Properties.SmallHoursIndicatorSize" title="@Strings.SmallHoursIndicatorSizeTitle">
-        <settingConfig type="list">
-            <listEntry value="4">@Strings.width4</listEntry>
-            <listEntry value="6">@Strings.width6</listEntry>
-            <listEntry value="8">@Strings.width8</listEntry>
-            <listEntry value="10">@Strings.width10</listEntry>
-        </settingConfig>
-    </setting>
-
     <setting propertyKey="@Properties.ShowFullDial" title="@Strings.ShowFullDiaTitle">
         <settingConfig type="boolean" />
     </setting>
@@ -286,43 +194,8 @@
     <setting propertyKey="@Properties.ShowNotificationAndConnection" title="@Strings.ShowNotificationAndConnectionTitle">
         <settingConfig type="boolean" />
     </setting>
-    
-    <setting propertyKey="@Properties.ShowSecondTimeOnDial" title="@Strings.ShowSecondTimeOnDialTitle">
-        <settingConfig type="boolean" />
-    </setting>
-    
-    <setting propertyKey="@Properties.SecondTimeOnDialColor" title="@Strings.SecondTimeOnDialColorTitle">
-        <settingConfig type="list">
-            <listEntry value="0xFFFFFF">@Strings.ColorWhite</listEntry>
-            <listEntry value="0x000000">@Strings.ColorBlack</listEntry>
-            <listEntry value="0x0000FF">@Strings.ColorDarkBlue</listEntry>
-            <listEntry value="0x00AAFF">@Strings.ColorBlue</listEntry>
-            <listEntry value="0x0055FF">@Strings.ColorLightBlue</listEntry>            
-            <listEntry value="0xFF0000">@Strings.ColorRed</listEntry>
-            <listEntry value="0xFF0055">@Strings.ColorLightRed</listEntry>            
-            <listEntry value="0xFFFF00">@Strings.ColorDarkYellow</listEntry>
-            <listEntry value="0xFFFF55">@Strings.ColorYellow</listEntry>
-            <listEntry value="0xFFFFAA">@Strings.ColorLightYellow</listEntry>            
-            <listEntry value="0xAAAAAA">@Strings.ColorLightGrey</listEntry>
-            <listEntry value="0x555555">@Strings.ColorDarkGrey</listEntry>
-            <listEntry value="0xFF5500">@Strings.ColorOrange</listEntry>
-            <listEntry value="0xFF5555">@Strings.ColorLightOrange</listEntry>            
-            <listEntry value="0x00AA00">@Strings.ColorDarkGreen</listEntry>
-            <listEntry value="0x00FF00">@Strings.ColorGreen</listEntry>
-            <listEntry value="0x00FFAA">@Strings.ColorLightGreen</listEntry>            
-            <listEntry value="0xFF00FF">@Strings.ColorPink</listEntry>
-        </settingConfig>
-    </setting>
-    
-    <setting propertyKey="@Properties.SecondTimePointerType" title="@Strings.SecondTimePointerTypeTitle">
-        <settingConfig type="list">
-        	<listEntry value="1">@Strings.PointIn</listEntry>
-            <listEntry value="2">@Strings.ArrowFilled</listEntry>
-            <listEntry value="3">@Strings.ArrowTransparent</listEntry>
-            <listEntry value="4">@Strings.LikeASuunto</listEntry>
-            <listEntry value="100">@Strings.OptionDisabled</listEntry>
-        </settingConfig>
-    </setting>
+
+
     
     <setting propertyKey="@Properties.SecondTimeUtcOffset" title="@Strings.SecondTimeUtcOffsetTitle">
         <settingConfig type="list">
@@ -385,11 +258,6 @@
             <listEntry value="3">@Strings.width3</listEntry>
             <listEntry value="4">@Strings.width4</listEntry>
         </settingConfig>
-    </setting>
-      
-
-    <setting propertyKey="@Properties.UseMilitaryFormat" title="@Strings.MilitaryFormatTitle">
-        <settingConfig type="boolean" />
     </setting>
 
 </settings>
