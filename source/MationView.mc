@@ -29,6 +29,8 @@ class MationView extends WatchUi.WatchFace {
     const DISTANCE = 11;
     const BATTERY_IN_DAYS = 12;
     const PRESSURE_ARRAY_KEY = "pressure";
+    const LOW_PRESSURE = 950;
+    const HIGH_PRESSURE = 1050;
 
     // others
     hidden var settings;
@@ -66,6 +68,19 @@ class MationView extends WatchUi.WatchFace {
     hidden var field2 = null;
     hidden var field3 = null;
     hidden var field4 = null;
+    
+    // meters / scales 
+    hidden var scaleStartCircle;
+    hidden var scaleEndCircle;
+    
+    // scales meter radiuses
+    hidden var startCircle;
+    hidden var masterEnd;
+    hidden var bigEnd;
+    hidden var smallEnd;
+    
+    hidden var leftScaleMeterCoors;
+    hidden var rightScaleMeterCoors;    
     
     hidden var isAwake;     // TEST
 
@@ -106,6 +121,18 @@ class MationView extends WatchUi.WatchFace {
         goldenAmMoment = null;
         goldenPmMoment = null;
         moonPhase = null; 
+        
+        // scales vars
+        scaleStartCircle = halfWidth - 12;
+        scaleEndCircle = halfWidth - 37;
+        
+        startCircle = halfWidth - 30;   // radius where starts all scales lines going to the edge of the screen
+        masterEnd = startCircle + 12;   // end of the biggiest scale part
+        bigEnd = startCircle + 8;       // end of the middle size
+        smallEnd = startCircle + 3;     // end of the smallest 
+        
+        leftScaleMeterCoors = uc.calculateScaleMeter(135, 225, halfWidth, startCircle, smallEnd, bigEnd, masterEnd);
+        rightScaleMeterCoors = uc.calculateScaleMeter(315, 405, halfWidth, startCircle, smallEnd, bigEnd, masterEnd);
         
         isAwake = true; // TEST    
     }
@@ -173,10 +200,10 @@ class MationView extends WatchUi.WatchFace {
         // second time calculation and dial drawing if any
         var secondTime = calculateSecondTime(new Time.Moment(now.value()));
         
-        drawMeter(dc, 135, 225); // LEFT
+        drawMeter(dc, 135, 225, true); // LEFT
         drawPressureToMeter(dc);
         
-        drawMeter(dc, 315, 405); // RIGHT
+        drawMeter(dc, 315, 405, false); // RIGHT
         drawAltToMeter(dc);
          
         var field0 = [field1[0] + 12, field1[1] + 8]; 
@@ -872,76 +899,46 @@ class MationView extends WatchUi.WatchFace {
                     dc.drawArc(xPos - 5, yPos, radius + 5, Gfx.ARC_CLOCKWISE, 90, 270);
                 } else if (phase == 6) {
                     dc.setColor(bgColor, frColor);
-                dc.fillRectangle(xPos + (radius / 2) - 3, yPos - radius, radius, (radius * 2) + 2);
+                    dc.fillRectangle(xPos + (radius / 2) - 3, yPos - radius, radius, (radius * 2) + 2);
                 } else if (phase == 7) {
                     dc.setColor(bgColor, frColor);
-                dc.fillCircle(xPos + 5, yPos, radius);
+                    dc.fillCircle(xPos + 5, yPos, radius);
                 }
         }
     }
     
-    function drawMeter(dc, from, to) {
-        dc.setColor(App.getApp().getProperty("HandsBottomColor"), bgColor);
-        
-        var angleDeg = 0;
-        var pointX1 =  0;
-        var pointY1 = 0;
-        var pointX2 = 0;
-        var pointY2 = 0;
-        
-        var startCircle = halfWidth - 30;
-        var masterEnd = startCircle + 12;
-        var bigEnd = startCircle + 8;
-        var smallEnd = startCircle + 3;
+    function drawMeter(dc, from, to, leftSide) {
+        var coords;
+        var coord;
+        dc.setColor(App.getApp().getProperty("HandsBottomColor"), Gfx.COLOR_TRANSPARENT);     
+        if (leftSide == true) {
+            coords = leftScaleMeterCoors;
+        } else {
+            coords = rightScaleMeterCoors;
+        }
         
         dc.setPenWidth(2);
         for(var angle = from; angle < to; angle+=3) {
-            angleDeg = (angle * Math.PI) / 180;
-            pointX1 = ((startCircle * Math.cos(angleDeg)) + halfWidth);
-            pointY1 = ((startCircle * Math.sin(angleDeg)) + halfWidth);
-            
-            pointX2 = ((smallEnd * Math.cos(angleDeg)) + halfWidth);
-            pointY2 = ((smallEnd * Math.sin(angleDeg)) + halfWidth);
-            
-            dc.drawLine(pointX1, pointY1, pointX2, pointY2);
+            coord = coords.get(angle);      
+            dc.drawLine(coord[0], coord[1], coord[2], coord[3]);
         }
         dc.setColor(Gfx.COLOR_LT_GRAY, bgColor);
         dc.setPenWidth(2);
         for(var angle = from; angle < to; angle+=9) {
-            angleDeg = (angle * Math.PI) / 180;
-            pointX1 = ((startCircle * Math.cos(angleDeg)) + halfWidth);
-            pointY1 = ((startCircle * Math.sin(angleDeg)) + halfWidth);
-            
-            pointX2 = ((bigEnd * Math.cos(angleDeg)) + halfWidth);
-            pointY2 = ((bigEnd * Math.sin(angleDeg)) + halfWidth);
-            
-            dc.drawLine(pointX1, pointY1, pointX2, pointY2);
+            coord = coords.get(angle);      
+            dc.drawLine(coord[0], coord[1], coord[2], coord[3]);
+
         }
         
         dc.setPenWidth(3);
-        angleDeg = (from * Math.PI) / 180;
-        pointX1 = ((startCircle * Math.cos(angleDeg)) + halfWidth);
-        pointY1 = ((startCircle * Math.sin(angleDeg)) + halfWidth);       
-        pointX2 = ((masterEnd * Math.cos(angleDeg)) + halfWidth);
-        pointY2 = ((masterEnd * Math.sin(angleDeg)) + halfWidth);  
-        dc.drawLine(pointX1, pointY1, pointX2, pointY2);
+        coord = coords.get(from);      
+        dc.drawLine(coord[0], coord[1], coord[2], coord[3]);
         
-        angleDeg = ((from + 45) * Math.PI) / 180;
-        pointX1 = ((startCircle * Math.cos(angleDeg)) + halfWidth);
-        pointY1 = ((startCircle * Math.sin(angleDeg)) + halfWidth);       
-        pointX2 = ((masterEnd * Math.cos(angleDeg)) + halfWidth);
-        pointY2 = ((masterEnd * Math.sin(angleDeg)) + halfWidth);  
-        dc.drawLine(pointX1, pointY1, pointX2, pointY2);
+        coord = coords.get((from + 45));      
+        dc.drawLine(coord[0], coord[1], coord[2], coord[3]);
         
-        angleDeg = ((from + 90) * Math.PI) / 180;
-        pointX1 = ((startCircle * Math.cos(angleDeg)) + halfWidth);
-        pointY1 = ((startCircle * Math.sin(angleDeg)) + halfWidth);       
-        pointX2 = ((masterEnd * Math.cos(angleDeg)) + halfWidth);
-        pointY2 = ((masterEnd * Math.sin(angleDeg)) + halfWidth);  
-        dc.drawLine(pointX1, pointY1, pointX2, pointY2);
-        
-        
-        
+        coord = coords.get((from + 90));      
+        dc.drawLine(coord[0], coord[1], coord[2], coord[3]);
     }
 
 
@@ -1304,43 +1301,40 @@ class MationView extends WatchUi.WatchFace {
         app.setProperty("pressure0", pressureValue);
     }
     
-    function drawPressureToMeter(dc) {
-        var startCircle = halfWidth - 12;
-        var endCircle = halfWidth - 37;
     
+    function drawPressureToMeter(dc) {
         dc.setPenWidth(3);
         dc.setColor(App.getApp().getProperty("HandsBottomColor"), Gfx.COLOR_TRANSPARENT);
-        dc.drawText((halfWidth / 2) - 10, dc.getHeight() - 60, Gfx.FONT_XTINY, 950, Gfx.TEXT_JUSTIFY_LEFT);
-        dc.drawText((halfWidth / 2) - 10, 40, Gfx.FONT_XTINY, 1050, Gfx.TEXT_JUSTIFY_LEFT);
+        dc.drawText((halfWidth / 2) - 10, dc.getHeight() - 60, Gfx.FONT_XTINY, LOW_PRESSURE.toString(), Gfx.TEXT_JUSTIFY_LEFT);
+        dc.drawText((halfWidth / 2) - 10, 40, Gfx.FONT_XTINY, HIGH_PRESSURE.toString(), Gfx.TEXT_JUSTIFY_LEFT);
         dc.setColor(themeColor, Gfx.COLOR_TRANSPARENT);
         
         var pressure = getPressure().toFloat();
-        var end = 225 - ((pressure - 950) * 0.9);
-        dc.drawArc(halfWidth, halfWidth, 120, Gfx.ARC_CLOCKWISE, 225, end);
-        
-        var endLine = 225 - ((1050 - pressure) * 0.9);
-        var angleDeg = (endLine * Math.PI) / 180;
-        var pointX1 = ((startCircle * Math.cos(angleDeg)) + halfWidth);
-        var pointY1 = ((startCircle * Math.sin(angleDeg)) + halfWidth);       
-        var pointX2 = ((endCircle * Math.cos(angleDeg)) + halfWidth);
-        var pointY2 = ((endCircle * Math.sin(angleDeg)) + halfWidth);  
-        dc.drawLine(pointX1, pointY1, pointX2, pointY2);        
-        
-        angleDeg = ((endLine + 4) * Math.PI) / 180;
-        pointX1 = ((startCircle * Math.cos(angleDeg)) + halfWidth);
-        pointY1 = ((startCircle * Math.sin(angleDeg)) + halfWidth);       
-        pointX2 = ((endCircle * Math.cos(angleDeg)) + halfWidth);
-        pointY2 = ((endCircle * Math.sin(angleDeg)) + halfWidth);   
-        dc.drawLine(pointX1, pointY1, pointX2, pointY2);             
+        if ((pressure >= LOW_PRESSURE) && (pressure <= HIGH_PRESSURE)) {
+            var end = 225 - ((pressure - LOW_PRESSURE) * 0.9);
+            dc.drawArc(halfWidth, halfWidth, 120, Gfx.ARC_CLOCKWISE, 225, end);
+            
+            var endLine = 225 - ((HIGH_PRESSURE - pressure) * 0.9);
+            var angleDeg = (endLine * Math.PI) / 180;
+            var pointX1 = ((scaleStartCircle * Math.cos(angleDeg)) + halfWidth);
+            var pointY1 = ((scaleStartCircle * Math.sin(angleDeg)) + halfWidth);       
+            var pointX2 = ((scaleEndCircle * Math.cos(angleDeg)) + halfWidth);
+            var pointY2 = ((scaleEndCircle * Math.sin(angleDeg)) + halfWidth);  
+            dc.drawLine(pointX1, pointY1, pointX2, pointY2);        
+            
+            angleDeg = ((endLine + 4) * Math.PI) / 180;
+            pointX1 = ((scaleStartCircle * Math.cos(angleDeg)) + halfWidth);
+            pointY1 = ((scaleStartCircle * Math.sin(angleDeg)) + halfWidth);       
+            pointX2 = ((scaleEndCircle * Math.cos(angleDeg)) + halfWidth);
+            pointY2 = ((scaleEndCircle * Math.sin(angleDeg)) + halfWidth);   
+            dc.drawLine(pointX1, pointY1, pointX2, pointY2);
+        }             
     }
     
     
     function drawAltToMeter(dc) {
-        var startCircle = halfWidth - 12;
-        var endCircle = halfWidth - 37;
-        
         var alt = getAltitude();
-        alt = alt[:altitude].toNumber();
+        alt = alt[:altitude].toDouble();
         
         var lowAlt = (app.getProperty("lowAlt") == null ? 0 : app.getProperty("lowAlt")).toNumber();        
         var topAlt = (app.getProperty("topAlt") == null ? 0 : app.getProperty("topAlt")).toNumber();
@@ -1358,17 +1352,17 @@ class MationView extends WatchUi.WatchFace {
             dc.drawArc(halfWidth, halfWidth, 120, Gfx.ARC_COUNTER_CLOCKWISE, 315, endAngle);
             
             var angleDeg = ((45 - end) * Math.PI) / 180;
-            var pointX1 = ((startCircle * Math.cos(angleDeg)) + halfWidth);
-            var pointY1 = ((startCircle * Math.sin(angleDeg)) + halfWidth);       
-            var pointX2 = ((endCircle * Math.cos(angleDeg)) + halfWidth);
-            var pointY2 = ((endCircle * Math.sin(angleDeg)) + halfWidth);  
+            var pointX1 = ((scaleStartCircle * Math.cos(angleDeg)) + halfWidth);
+            var pointY1 = ((scaleStartCircle * Math.sin(angleDeg)) + halfWidth);       
+            var pointX2 = ((scaleEndCircle * Math.cos(angleDeg)) + halfWidth);
+            var pointY2 = ((scaleEndCircle * Math.sin(angleDeg)) + halfWidth);  
             dc.drawLine(pointX1, pointY1, pointX2, pointY2);        
             
             angleDeg = ((45 - end - 4) * Math.PI) / 180;
-            pointX1 = ((startCircle * Math.cos(angleDeg)) + halfWidth);
-            pointY1 = ((startCircle * Math.sin(angleDeg)) + halfWidth);       
-            pointX2 = ((endCircle * Math.cos(angleDeg)) + halfWidth);
-            pointY2 = ((endCircle * Math.sin(angleDeg)) + halfWidth);  
+            pointX1 = ((scaleStartCircle * Math.cos(angleDeg)) + halfWidth);
+            pointY1 = ((scaleStartCircle * Math.sin(angleDeg)) + halfWidth);       
+            pointX2 = ((scaleEndCircle * Math.cos(angleDeg)) + halfWidth);
+            pointY2 = ((scaleEndCircle * Math.sin(angleDeg)) + halfWidth);  
             dc.drawLine(pointX1, pointY1, pointX2, pointY2);        
         } else {
             recalculateAltScale(alt);
@@ -1376,12 +1370,19 @@ class MationView extends WatchUi.WatchFace {
         }     
     }
     
+    
     function recalculateAltScale(alt) {
-        var lowAlt = (alt / 100).toNumber() * 50;       
-        app.setProperty("lowAlt", lowAlt);
+        var lowAlt = (alt / 100).format("%.2f").toDouble() * 50;
+        var topAlt = (alt / 100).format("%.2f").toDouble() * 150;
+                            
+        if (alt < 0) {
+            app.setProperty("lowAlt", topAlt);
+            app.setProperty("topAlt", lowAlt);
+        } else {
+            app.setProperty("lowAlt", lowAlt);
+            app.setProperty("topAlt", topAlt);
+        }
         
-        var topAlt = (alt / 100).toNumber() * 150;
-        app.setProperty("topAlt", topAlt);
     }
         
 }

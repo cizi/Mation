@@ -1,0 +1,4 @@
+Version 1.1
+- optimalization, code simplified  
+Version 1.0
+- initial release
