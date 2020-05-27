@@ -91,8 +91,7 @@ class MationView extends WatchUi.WatchFace {
         secPosX = dc.getWidth() - 15;
         secPosY = halfWidth - (secFontHeight / 2) - 3;
 
-        var yPosFor23 = ((dc.getHeight() / 6).toNumber() * 4) - 9;
-        field1 = [halfWidth - 23, 60];
+        field1 = [halfWidth - 35, 76];
         field2 = [50, halfWidth - 4];
         field3 = [(dc.getWidth() - 44), halfWidth - 4];
         field4 = [halfWidth + 6, dc.getWidth() - 66];     // on F6 [140, 189]
@@ -179,8 +178,10 @@ class MationView extends WatchUi.WatchFace {
         
         drawMeter(dc, 315, 405); // RIGHT
         drawAltToMeter(dc);
-             
-        // drawDataField(App.getApp().getProperty("Opt1"), 1, field1, today, secondTime, dc);  // FIELD 1
+         
+        var field0 = [field1[0] + 12, field1[1] + 8]; 
+        drawDataField(4, 1, field0, today, secondTime, dc);    
+        drawDataField(1, 1, field1, today, secondTime, dc);  // FIELD 1 - App.getApp().getProperty("Opt1")
         drawDataField(8, 2, field2, today, secondTime, dc);  // FIELD 2 - App.getApp().getProperty("Opt2")
         drawDataField(7, 3, field3, today, secondTime, dc);  // FIELD 3 - App.getApp().getProperty("Opt3")
         if (App.getApp().getProperty("ShowBatteryInDays")) {
@@ -214,7 +215,7 @@ class MationView extends WatchUi.WatchFace {
         var pen = 4;
         var handsAngle = 3;
         var handCenterCircle = 7;
-        var hrHandEnd = halfWidth - 45;
+        var hrHandEnd = halfWidth - 65;
         var handSemiEnd = halfWidth - 100;  // white part circle
         
         dc.setColor(App.getApp().getProperty("HandsBottomColor"), Gfx.COLOR_TRANSPARENT);
@@ -315,8 +316,13 @@ class MationView extends WatchUi.WatchFace {
             var secHandX1 = ((minHandEnd * Math.cos(angleDeg)) + halfWidth);
             var secHandY1 = ((minHandEnd * Math.sin(angleDeg)) + halfWidth);
             
+            secAngle = (time.sec * 6) + 90;
+            angleDeg = (secAngle * Math.PI) / 180;
+            var secHandX2 = ((20 * Math.cos(angleDeg)) + halfWidth);
+            var secHandY2 = ((20 * Math.sin(angleDeg)) + halfWidth);
+            
             dc.setColor(themeColor, Gfx.COLOR_TRANSPARENT);
-            dc.drawLine(halfWidth, halfWidth, secHandX1, secHandY1);
+            dc.drawLine(secHandX2, secHandY2, secHandX1, secHandY1);
         } 
     }
 
@@ -585,14 +591,7 @@ class MationView extends WatchUi.WatchFace {
     // draw next sun event
     function drawSunsetSunriseTime(xPos, yPos, dc, position) {
         if (location != null) {
-            if (position == 1) {
-                xPos -= 6;
-                yPos -= 2;
-            }
-            if (position == 4) {
-                xPos -= 34;
-                yPos += 14;
-            }
+
 
             var now = new Time.Moment(Time.now().value());
             if ((sunriseMoment != null) && (sunsetMoment != null)) {
@@ -604,24 +603,25 @@ class MationView extends WatchUi.WatchFace {
                 // Before sunrise today: today's sunrise is next.
                 if (sunriseMoment.compare(now) > 0) {       // now < sc.momentToInfo(sunrise)
                     nextSunEvent = sc.momentToInfo(sunriseMoment);
-                    drawSun(xPos, yPos, dc, false, themeColor);
+                    drawSun(xPos, yPos, dc, false, frColor);
                     // After sunrise today, before sunset today: today's sunset is next.
                 } else if (sunsetMoment.compare(now) > 0) { // now < sc.momentToInfo(sunset)
                     nextSunEvent = sc.momentToInfo(sunsetMoment);
-                    drawSun(xPos, yPos, dc, true, themeColor);
+                    drawSun(xPos, yPos, dc, true, frColor);
                 } else {    // This is here just for sure if some time condition won't meet the timing
                             // comparation. It menas I will force calculate the next event, the rest will be updated in
                             // the next program iteration -  After sunset today: tomorrow's sunrise (if any) is next.
                     now = now.add(new Time.Duration(Gregorian.SECONDS_PER_DAY));
                     var sunrise = sc.calculate(now, location, SUNRISE);
                     nextSunEvent = sc.momentToInfo(sunrise);
-                    drawSun(xPos, yPos, dc, false, themeColor);
+                    drawSun(xPos, yPos, dc, false, frColor);
                 }
 
                 var value = getFormattedTime(nextSunEvent.hour, nextSunEvent.min); // App.getApp().getFormattedTime(hour, min);
                 value = value[:formatted] + value[:amPm];
-                dc.setColor(frColor, Gfx.COLOR_TRANSPARENT);
-                dc.drawText(xPos + 21, yPos - 15, fntDataFields, value, Gfx.TEXT_JUSTIFY_LEFT);
+                dc.setColor(themeColor, Gfx.COLOR_TRANSPARENT);
+                //dc.drawText(xPos + 21, yPos - 15, fntDataFields, value, Gfx.TEXT_JUSTIFY_LEFT);
+                dc.drawText(xPos + 21, yPos - 21, Gfx.FONT_TINY, value, Gfx.TEXT_JUSTIFY_LEFT);
             }
         }
     }
@@ -649,8 +649,8 @@ class MationView extends WatchUi.WatchFace {
     // Will draw bell if is alarm set
     function drawBell(dc) {
         if (settings.alarmCount > 0) {
-            dc.setColor(frColor, bgColor);
-            dc.drawText(halfWidth - 10, 80, fntIcons, ":", Gfx.TEXT_JUSTIFY_LEFT);
+            dc.setColor(frColor, Gfx.COLOR_TRANSPARENT);
+            dc.drawText(halfWidth - 10, 25, fntIcons, ":", Gfx.TEXT_JUSTIFY_LEFT);
         }
     }
 
@@ -701,21 +701,7 @@ class MationView extends WatchUi.WatchFace {
 
     // Draw steps info
     function drawSteps(posX, posY, dc, position) {
-        if (position == 1) {
-            posX -= 10;
-            posY = (is240dev ? posY - 18 : posY - 16);
-        }
-        if (position == 2) {
-            posX = (is240dev ? (posX - 6) : (posX - 4));
-        }
-        if (position == 3) {
-            posX = (is240dev ? (posX - 40) : (posX - 36));
-        }
-        if (position == 4) {
-            posX = (is240dev ? (posX - 40) : (posX - 41));
-        }
-
-        dc.setColor(themeColor, bgColor);
+        dc.setColor(App.getApp().getProperty("HandsBottomColor"), Gfx.COLOR_TRANSPARENT);
         dc.drawText(posX - 4, posY - 4, fntIcons, "0", Gfx.TEXT_JUSTIFY_LEFT);
 
         dc.setColor(frColor, Gfx.COLOR_TRANSPARENT);
@@ -724,7 +710,8 @@ class MationView extends WatchUi.WatchFace {
         if (is240dev && (stepsCount > 999) && ((position == 2) || (position == 3))){
             stepsCount = (info.steps / 1000.0).format("%.1f").toString() + "k";
         }
-        dc.drawText(posX + 22, posY, fntDataFields, stepsCount.toString(), Gfx.TEXT_JUSTIFY_LEFT);
+        // dc.drawText(posX + 22, posY, fntDataFields, stepsCount.toString(), Gfx.TEXT_JUSTIFY_LEFT);
+        dc.drawText(posX + 22, posY, Gfx.FONT_XTINY, stepsCount.toString(), Gfx.TEXT_JUSTIFY_LEFT);
     }
     
     
@@ -1352,16 +1339,18 @@ class MationView extends WatchUi.WatchFace {
         var startCircle = halfWidth - 12;
         var endCircle = halfWidth - 37;
         
-        var lowAlt = 0;
-        var topAlt = 1000;
+        var alt = getAltitude();
+        alt = alt[:altitude].toNumber();
+        
+        var lowAlt = (app.getProperty("lowAlt") == null ? 0 : app.getProperty("lowAlt")).toNumber();        
+        var topAlt = (app.getProperty("topAlt") == null ? 0 : app.getProperty("topAlt")).toNumber();
+        
         dc.setPenWidth(3);
         dc.setColor(App.getApp().getProperty("HandsBottomColor"), Gfx.COLOR_TRANSPARENT);
         dc.drawText(dc.getWidth() - 66, dc.getHeight() - 60, Gfx.FONT_XTINY, lowAlt.toString(), Gfx.TEXT_JUSTIFY_RIGHT);
         dc.drawText(dc.getWidth() - 66, 40, Gfx.FONT_XTINY, topAlt.toString(), Gfx.TEXT_JUSTIFY_RIGHT);
         dc.setColor(themeColor, Gfx.COLOR_TRANSPARENT);
         
-        var alt = getAltitude();
-        alt = alt[:altitude].toNumber();
         if ((lowAlt.toNumber() < alt) && (topAlt.toNumber() > alt))  {
             var degreeOnScalePerMeter = (90.toFloat() / (topAlt - lowAlt)).toFloat();
             var end = (alt - lowAlt) * degreeOnScalePerMeter;
@@ -1381,7 +1370,18 @@ class MationView extends WatchUi.WatchFace {
             pointX2 = ((endCircle * Math.cos(angleDeg)) + halfWidth);
             pointY2 = ((endCircle * Math.sin(angleDeg)) + halfWidth);  
             dc.drawLine(pointX1, pointY1, pointX2, pointY2);        
-        }       
+        } else {
+            recalculateAltScale(alt);
+            drawAltToMeter(dc);
+        }     
+    }
+    
+    function recalculateAltScale(alt) {
+        var lowAlt = (alt / 100).toNumber() * 50;       
+        app.setProperty("lowAlt", lowAlt);
+        
+        var topAlt = (alt / 100).toNumber() * 150;
+        app.setProperty("topAlt", topAlt);
     }
         
 }
