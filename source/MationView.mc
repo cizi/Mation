@@ -81,9 +81,12 @@ class MationView extends WatchUi.WatchFace {
     
     hidden var leftScaleMeterCoors;
     hidden var rightScaleMeterCoors;    
+    hidden var scaleMeterRadius;
     
-    hidden var isAwake;     // TEST
-
+    hidden var isAwake;
+    hidden var partialUpdatesAllowed;
+    hidden var minHandEnd; 
+    
     function initialize() {
         WatchFace.initialize();
         app = App.getApp();
@@ -92,6 +95,7 @@ class MationView extends WatchUi.WatchFace {
 
         fntIcons = WatchUi.loadResource(Rez.Fonts.fntIcons);
         fntDataFields = WatchUi.loadResource(Rez.Fonts.fntDataFields);
+        partialUpdatesAllowed = ( Toybox.WatchUi.WatchFace has :onPartialUpdate );
     }
 
     // Load your resources here
@@ -109,7 +113,7 @@ class MationView extends WatchUi.WatchFace {
         field1 = [halfWidth - 35, 76];
         field2 = [50, halfWidth - 4];
         field3 = [(dc.getWidth() - 44), halfWidth - 4];
-        field4 = [halfWidth + 6, dc.getWidth() - 66];     // on F6 [140, 189]
+        field4 = [halfWidth + 6, dc.getWidth() - 66];
 
         smallDialCoordsLines = uc.calculateSmallDialLines(halfWidth);
 
@@ -131,10 +135,19 @@ class MationView extends WatchUi.WatchFace {
         bigEnd = startCircle + 8;       // end of the middle size
         smallEnd = startCircle + 3;     // end of the smallest 
         
+        minHandEnd = halfWidth - 15;
+        
         leftScaleMeterCoors = uc.calculateScaleMeter(135, 225, halfWidth, startCircle, smallEnd, bigEnd, masterEnd);
         rightScaleMeterCoors = uc.calculateScaleMeter(315, 405, halfWidth, startCircle, smallEnd, bigEnd, masterEnd);
         
-        isAwake = true; // TEST    
+        scaleMeterRadius = 120;         // FENIX 6X (280x280)
+        if ((is240dev == false) && (is280dev == false)) {
+            scaleMeterRadius = 110;     // FENIX 6 (260x260)
+        } else if (is240dev) {
+            scaleMeterRadius = 100;     // others (240x240)
+        }
+        
+        isAwake = true;
     }
 
     // Called when this View is brought to the foreground. Restore
@@ -194,7 +207,7 @@ class MationView extends WatchUi.WatchFace {
                 drawMoonPhase(halfWidth - (dateWidth / 2) - 6, 198, dc, getMoonPhase(today), 0);
             }
             dc.setColor(themeColor, Gfx.COLOR_TRANSPARENT);
-            dc.drawText(halfWidth + moonCentering, 185, Gfx.FONT_TINY, dateString.toUpper(), Gfx.TEXT_JUSTIFY_CENTER);
+            dc.drawText(halfWidth + moonCentering, (dc.getWidth() * 0.66).toNumber(), Gfx.FONT_TINY, dateString.toUpper(), Gfx.TEXT_JUSTIFY_CENTER);
         }       
         
         // second time calculation and dial drawing if any
@@ -233,7 +246,17 @@ class MationView extends WatchUi.WatchFace {
         if ((today.min == 0) && (today.hour != lastPressureLoggingTimeHistoty)) {
             handlePressureHistorty(getPressure());
             app.setProperty("lastPressureLoggingTimeHistoty", today.hour);
-        }    
+        }  
+        
+        
+        if (false) { // TODO (partialUpdatesAllowed) {
+            // If this device supports partial updates and they are currently
+            // allowed run the onPartialUpdate method to draw the second hand.
+            onPartialUpdate( dc );
+        } else if (isAwake) {
+            drawSecondHand(dc, today, minHandEnd);
+        }
+          
     }
     
     
@@ -292,8 +315,7 @@ class MationView extends WatchUi.WatchFace {
         // minutes
         handsAngle = 2;
         dc.setColor(App.getApp().getProperty("HandsBottomColor"), Gfx.COLOR_TRANSPARENT);       
-        var minHandEnd = halfWidth - 15;    
-            
+           
         var minAngle = (time.min * 6) - 90;
         var minCoef = minAngle + handsAngle;
         
@@ -334,14 +356,17 @@ class MationView extends WatchUi.WatchFace {
         
         dc.drawLine(minHandX1, minHandY1, minHandX2, minHandY2);
         dc.drawLine(minHandX1, minHandY1, minHandX5, minHandY5);
-        dc.drawLine(minHandX2, minHandY2, minHandX6, minHandY6);    
-        
+        dc.drawLine(minHandX2, minHandY2, minHandX6, minHandY6);
+    }
+    
+    
+    function drawSecondHand(dc, time, radius) {
         // seconds
-        if (App.getApp().getProperty("ShowSeconds") && isAwake) {
+        if (App.getApp().getProperty("ShowSeconds")) {
             var secAngle = (time.sec * 6) - 90;
-            angleDeg = (secAngle * Math.PI) / 180;
-            var secHandX1 = ((minHandEnd * Math.cos(angleDeg)) + halfWidth);
-            var secHandY1 = ((minHandEnd * Math.sin(angleDeg)) + halfWidth);
+            var angleDeg = (secAngle * Math.PI) / 180;
+            var secHandX1 = ((radius * Math.cos(angleDeg)) + halfWidth);
+            var secHandY1 = ((radius * Math.sin(angleDeg)) + halfWidth);
             
             secAngle = (time.sec * 6) + 90;
             angleDeg = (secAngle * Math.PI) / 180;
@@ -350,27 +375,15 @@ class MationView extends WatchUi.WatchFace {
             
             dc.setColor(themeColor, Gfx.COLOR_TRANSPARENT);
             dc.drawLine(secHandX2, secHandY2, secHandX1, secHandY1);
-        } 
+        }
     }
+
 
     function onPartialUpdate(dc) {
         if (App.getApp().getProperty("ShowSeconds")) {
-            /* dc.setClip(secPosX - secFontWidth, secPosY - 2, secFontWidth, secFontHeight);
-            dc.setColor(frColor, bgColor);
-            dc.clear();
-            var today = Gregorian.info(Time.now(), Time.FORMAT_MEDIUM);
-            dc.drawText(secPosX, secPosY, Gfx.FONT_TINY, today.sec.format("%02d"), Gfx.TEXT_JUSTIFY_RIGHT); // seconds
-            
-            var time = Gregorian.info(Time.now(), Time.FORMAT_SHORT);
-            var minHandEnd = halfWidth - 15; 
-            var secAngle = (time.sec * 6) - 90;
-            var angleDeg = (secAngle * Math.PI) / 180;
-            var secHandX1 = ((minHandEnd * Math.cos(angleDeg)) + halfWidth);
-            var secHandY1 = ((minHandEnd * Math.sin(angleDeg)) + halfWidth);
-            
-            dc.setColor(themeColor, Gfx.COLOR_TRANSPARENT);
-            dc.drawLine(halfWidth, halfWidth, secHandX1, secHandY1); 
-            */
+            // dc.clear();
+            // dc.setColor(frColor, bgColor);
+            // drawSecondHand(dc, System.getClockTime(), minHandEnd);
         }
     }
 
@@ -383,13 +396,13 @@ class MationView extends WatchUi.WatchFace {
 
     // The user has just looked at their watch. Timers and animations may be started here.
     function onExitSleep() {
-        isAwake = true;     // TEST
+        isAwake = true;
     }
 
     // Terminate any active timers and prepare for slow updates.
     function onEnterSleep() {
-        isAwake = false;        // TEST
-        WatchUi.requestUpdate();     // TEST
+        isAwake = false;
+        WatchUi.requestUpdate();
     }
     
     
@@ -729,7 +742,7 @@ class MationView extends WatchUi.WatchFace {
     // Draw steps info
     function drawSteps(posX, posY, dc, position) {
         dc.setColor(App.getApp().getProperty("HandsBottomColor"), Gfx.COLOR_TRANSPARENT);
-        dc.drawText(posX - 4, posY - 4, fntIcons, "0", Gfx.TEXT_JUSTIFY_LEFT);
+        dc.drawText(posX - 8, posY - 4, fntIcons, "0", Gfx.TEXT_JUSTIFY_LEFT);
 
         dc.setColor(frColor, Gfx.COLOR_TRANSPARENT);
         var info = ActivityMonitor.getInfo();
@@ -944,6 +957,9 @@ class MationView extends WatchUi.WatchFace {
 
     // Draw battery witch % state
     function drawBattery(xPos, yPos, dc, position, time, inDays) { 
+        if ((is240dev == false) && (is280dev == false)) {
+            yPos += 4;
+        }
         dc.setPenWidth(1);
         var batteryPercent = System.getSystemStats().battery;
         if (batteryPercent <= 10) {
@@ -1305,14 +1321,14 @@ class MationView extends WatchUi.WatchFace {
     function drawPressureToMeter(dc) {
         dc.setPenWidth(3);
         dc.setColor(App.getApp().getProperty("HandsBottomColor"), Gfx.COLOR_TRANSPARENT);
-        dc.drawText((halfWidth / 2) - 10, dc.getHeight() - 60, Gfx.FONT_XTINY, LOW_PRESSURE.toString(), Gfx.TEXT_JUSTIFY_LEFT);
-        dc.drawText((halfWidth / 2) - 10, 40, Gfx.FONT_XTINY, HIGH_PRESSURE.toString(), Gfx.TEXT_JUSTIFY_LEFT);
+        dc.drawText((halfWidth / 2) - 8, dc.getHeight() - 60, Gfx.FONT_XTINY, LOW_PRESSURE.toString(), Gfx.TEXT_JUSTIFY_LEFT);
+        dc.drawText((halfWidth / 2) - 8, 40, Gfx.FONT_XTINY, HIGH_PRESSURE.toString(), Gfx.TEXT_JUSTIFY_LEFT);
         dc.setColor(themeColor, Gfx.COLOR_TRANSPARENT);
         
         var pressure = getPressure().toFloat();
         if ((pressure >= LOW_PRESSURE) && (pressure <= HIGH_PRESSURE)) {
             var end = 225 - ((pressure - LOW_PRESSURE) * 0.9);
-            dc.drawArc(halfWidth, halfWidth, 120, Gfx.ARC_CLOCKWISE, 225, end);
+            dc.drawArc(halfWidth, halfWidth, scaleMeterRadius, Gfx.ARC_CLOCKWISE, 225, end);
             
             var endLine = 225 - ((HIGH_PRESSURE - pressure) * 0.9);
             var angleDeg = (endLine * Math.PI) / 180;
@@ -1333,6 +1349,11 @@ class MationView extends WatchUi.WatchFace {
     
     
     function drawAltToMeter(dc) {
+        var xPos = dc.getWidth() - 64;
+        if ((is240dev == false) && (is280dev == false)) {
+            xPos += 4;
+        }
+
         var alt = getAltitude();
         alt = alt[:altitude].toDouble();
         
@@ -1341,15 +1362,15 @@ class MationView extends WatchUi.WatchFace {
         
         dc.setPenWidth(3);
         dc.setColor(App.getApp().getProperty("HandsBottomColor"), Gfx.COLOR_TRANSPARENT);
-        dc.drawText(dc.getWidth() - 66, dc.getHeight() - 60, Gfx.FONT_XTINY, lowAlt.toString(), Gfx.TEXT_JUSTIFY_RIGHT);
-        dc.drawText(dc.getWidth() - 66, 40, Gfx.FONT_XTINY, topAlt.toString(), Gfx.TEXT_JUSTIFY_RIGHT);
+        dc.drawText(xPos, dc.getHeight() - 60, Gfx.FONT_XTINY, lowAlt.toString(), Gfx.TEXT_JUSTIFY_RIGHT);
+        dc.drawText(xPos, 40, Gfx.FONT_XTINY, topAlt.toString(), Gfx.TEXT_JUSTIFY_RIGHT);
         dc.setColor(themeColor, Gfx.COLOR_TRANSPARENT);
         
         if ((lowAlt.toNumber() < alt) && (topAlt.toNumber() > alt))  {
             var degreeOnScalePerMeter = (90.toFloat() / (topAlt - lowAlt)).toFloat();
             var end = (alt - lowAlt) * degreeOnScalePerMeter;
             var endAngle = 315 + end;
-            dc.drawArc(halfWidth, halfWidth, 120, Gfx.ARC_COUNTER_CLOCKWISE, 315, endAngle);
+            dc.drawArc(halfWidth, halfWidth, scaleMeterRadius, Gfx.ARC_COUNTER_CLOCKWISE, 315, endAngle);
             
             var angleDeg = ((45 - end) * Math.PI) / 180;
             var pointX1 = ((scaleStartCircle * Math.cos(angleDeg)) + halfWidth);
@@ -1372,9 +1393,17 @@ class MationView extends WatchUi.WatchFace {
     
     
     function recalculateAltScale(alt) {
-        var lowAlt = (alt / 100).format("%.2f").toDouble() * 50;
-        var topAlt = (alt / 100).format("%.2f").toDouble() * 150;
-                            
+        var lowAlt = 0;
+        var topAlt = 0;
+                     
+        if ((alt < 100) && (alt > -100)) {  // if is altitude between 100 and -100 is necessary to 
+            lowAlt = (alt / 100).format("%.2f").toDouble() * 50;    // to calculate with
+            topAlt = (alt / 100).format("%.2f").toDouble() * 150;   // decimals
+        } else {                                                    // otherwise it will be rounded 
+            lowAlt = (alt / 100).format("%.0f").toDouble() * 50;    // to 
+            topAlt = (alt / 100).format("%.0f").toDouble() * 150;   // hundreds
+        }
+                                  
         if (alt < 0) {
             app.setProperty("lowAlt", topAlt);
             app.setProperty("topAlt", lowAlt);
@@ -1384,5 +1413,4 @@ class MationView extends WatchUi.WatchFace {
         }
         
     }
-        
 }
