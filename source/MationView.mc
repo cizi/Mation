@@ -87,6 +87,8 @@ class MationView extends WatchUi.WatchFace {
     hidden var partialUpdatesAllowed;
     hidden var minHandEnd; 
     
+    hidden var smallFont;
+    
     function initialize() {
         WatchFace.initialize();
         app = App.getApp();
@@ -148,6 +150,7 @@ class MationView extends WatchUi.WatchFace {
         }
         
         isAwake = true;
+        smallFont = (is240dev ? fntDataFields : Gfx.FONT_XTINY);
     }
 
     // Called when this View is brought to the foreground. Restore
@@ -204,7 +207,12 @@ class MationView extends WatchUi.WatchFace {
                 today = Gregorian.info(Time.now(), Time.FORMAT_SHORT);
                 var dateWidth = dc.getTextWidthInPixels(dateString, Gfx.FONT_TINY);
                 moonCentering = 14;
-                drawMoonPhase(halfWidth - (dateWidth / 2) - 6, 198, dc, getMoonPhase(today), 0);
+                var xPos = halfWidth - (dateWidth / 2) - 10;
+                var yPos = halfWidth + (dc.getHeight() / 5).toNumber();
+                if ((is240dev == false) && (is280dev == false)) {
+                    yPos += 4;
+                }
+                drawMoonPhase(xPos, yPos, dc, getMoonPhase(today), 0);
             }
             dc.setColor(themeColor, Gfx.COLOR_TRANSPARENT);
             dc.drawText(halfWidth + moonCentering, (dc.getWidth() * 0.66).toNumber(), Gfx.FONT_TINY, dateString.toUpper(), Gfx.TEXT_JUSTIFY_CENTER);
@@ -754,7 +762,7 @@ class MationView extends WatchUi.WatchFace {
             stepsCount = (info.steps / 1000.0).format("%.1f").toString() + "k";
         }
         // dc.drawText(posX + 22, posY, fntDataFields, stepsCount.toString(), Gfx.TEXT_JUSTIFY_LEFT);
-        dc.drawText(posX + 22, posY, Gfx.FONT_XTINY, stepsCount.toString(), Gfx.TEXT_JUSTIFY_LEFT);
+        dc.drawText(posX + 22, posY, smallFont, stepsCount.toString(), Gfx.TEXT_JUSTIFY_LEFT);
     }
     
     
@@ -999,7 +1007,7 @@ class MationView extends WatchUi.WatchFace {
             }
             dc.setColor(App.getApp().getProperty("HandsBottomColor"), Gfx.COLOR_TRANSPARENT);
             dc.setColor(frColor, bgColor);  
-            dc.drawText(xPos + 12, yPos, Gfx.FONT_XTINY, batText, Gfx.TEXT_JUSTIFY_CENTER);  
+            dc.drawText(xPos + 12, yPos, smallFont, batText, Gfx.TEXT_JUSTIFY_CENTER);  
         }        
     }
     
@@ -1335,8 +1343,8 @@ class MationView extends WatchUi.WatchFace {
         }
         dc.setPenWidth(3);
         dc.setColor(App.getApp().getProperty("HandsBottomColor"), Gfx.COLOR_TRANSPARENT);
-        dc.drawText(xPos, dc.getHeight() - 60, Gfx.FONT_XTINY, LOW_PRESSURE.toString(), Gfx.TEXT_JUSTIFY_LEFT);
-        dc.drawText(xPos, 40, Gfx.FONT_XTINY, HIGH_PRESSURE.toString(), Gfx.TEXT_JUSTIFY_LEFT);
+        dc.drawText(xPos, dc.getHeight() - 60, smallFont, LOW_PRESSURE.toString(), Gfx.TEXT_JUSTIFY_LEFT);
+        dc.drawText(xPos, 40, smallFont, HIGH_PRESSURE.toString(), Gfx.TEXT_JUSTIFY_LEFT);
         dc.setColor(themeColor, Gfx.COLOR_TRANSPARENT);
         
         var pressure = getPressure().toFloat();
@@ -1376,8 +1384,8 @@ class MationView extends WatchUi.WatchFace {
         
         dc.setPenWidth(3);
         dc.setColor(App.getApp().getProperty("HandsBottomColor"), Gfx.COLOR_TRANSPARENT);
-        dc.drawText(xPos, dc.getHeight() - 60, Gfx.FONT_XTINY, lowAlt.toString(), Gfx.TEXT_JUSTIFY_RIGHT);
-        dc.drawText(xPos, 40, Gfx.FONT_XTINY, topAlt.toString(), Gfx.TEXT_JUSTIFY_RIGHT);
+        dc.drawText(xPos, dc.getHeight() - 60, smallFont, lowAlt.toString(), Gfx.TEXT_JUSTIFY_RIGHT);
+        dc.drawText(xPos, 40, smallFont, topAlt.toString(), Gfx.TEXT_JUSTIFY_RIGHT);
         dc.setColor(themeColor, Gfx.COLOR_TRANSPARENT);
         
         if ((lowAlt.toNumber() < alt) && (topAlt.toNumber() > alt))  {
