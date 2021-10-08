@@ -35,6 +35,7 @@ class MationView extends WatchUi.WatchFace {
     // others
     hidden var settings;
     hidden var app;
+    hidden var is218dev;
     hidden var is240dev;
     hidden var is280dev;
     hidden var secPosX;
@@ -103,6 +104,7 @@ class MationView extends WatchUi.WatchFace {
     // Load your resources here
     function onLayout(dc) {
         setLayout(Rez.Layouts.WatchFace(dc));
+        is218dev = (dc.getWidth() == 218);
         is240dev = (dc.getWidth() == 240);
         is280dev = (dc.getWidth() == 280);
 
@@ -143,14 +145,16 @@ class MationView extends WatchUi.WatchFace {
         rightScaleMeterCoors = uc.calculateScaleMeter(315, 405, halfWidth, startCircle, smallEnd, bigEnd, masterEnd);
         
         scaleMeterRadius = 120;         // FENIX 6X (280x280)
-        if ((is240dev == false) && (is280dev == false)) {
+        if ((is240dev == false) && (is280dev == false) && (is218dev == false)) {
             scaleMeterRadius = 110;     // FENIX 6 (260x260)
         } else if (is240dev) {
             scaleMeterRadius = 100;     // others (240x240)
+        } else {
+        	scaleMeterRadius = 90;     // others (218x218)
         }
         
         isAwake = true;
-        smallFont = (is240dev ? fntDataFields : Gfx.FONT_XTINY);
+        smallFont = (is240dev || is218dev ? fntDataFields : Gfx.FONT_XTINY);
     }
 
     // Called when this View is brought to the foreground. Restore
@@ -209,13 +213,15 @@ class MationView extends WatchUi.WatchFace {
                 moonCentering = 14;
                 var xPos = halfWidth - (dateWidth / 2) - 10;
                 var yPos = halfWidth + (dc.getHeight() / 5).toNumber();
+                yPos -= (is218dev ? 14 : 0);
                 if ((is240dev == false) && (is280dev == false)) {
                     yPos += 4;
                 }
                 drawMoonPhase(xPos, yPos, dc, getMoonPhase(today), 0);
             }
             dc.setColor(themeColor, Gfx.COLOR_TRANSPARENT);
-            dc.drawText(halfWidth + moonCentering, (dc.getWidth() * 0.66).toNumber(), Gfx.FONT_TINY, dateString.toUpper(), Gfx.TEXT_JUSTIFY_CENTER);
+            var yPos = (dc.getWidth() * 0.66).toNumber() - (is218dev ? 12 : 0);
+            dc.drawText(halfWidth + moonCentering, yPos, Gfx.FONT_TINY, dateString.toUpper(), Gfx.TEXT_JUSTIFY_CENTER);
         }       
         
         // second time calculation and dial drawing if any
@@ -274,7 +280,7 @@ class MationView extends WatchUi.WatchFace {
         var handsAngle = 3;
         var handCenterCircle = 7;
         var hrHandEnd = halfWidth - 65;
-        var handSemiEnd = halfWidth - (is240dev ? 85 : 100);  // white part circle
+        var handSemiEnd = halfWidth - (is240dev ? 85 : (is218dev ? 75 : 100));  // white part circle
         
         dc.setColor(App.getApp().getProperty("HandsBottomColor"), Gfx.COLOR_TRANSPARENT);
         dc.fillCircle(halfWidth, halfWidth, 9);
@@ -698,7 +704,7 @@ class MationView extends WatchUi.WatchFace {
     function drawBell(dc) {
         if (settings.alarmCount > 0) {
             dc.setColor(frColor, Gfx.COLOR_TRANSPARENT);
-            dc.drawText(halfWidth - 10, 25, fntIcons, ":", Gfx.TEXT_JUSTIFY_LEFT);
+            dc.drawText(halfWidth - 10, (is218dev ? 35 : 25), fntIcons, ":", Gfx.TEXT_JUSTIFY_LEFT);
         }
     }
 
@@ -751,6 +757,10 @@ class MationView extends WatchUi.WatchFace {
     function drawSteps(posX, posY, dc, position) {
         if (is240dev) {
             posX -= 6;
+        }
+        if (is218dev) {
+        	posY -= 68;
+        	posX -= 10;
         }
         dc.setColor(App.getApp().getProperty("HandsBottomColor"), Gfx.COLOR_TRANSPARENT);
         dc.drawText(posX - 8, posY - 4, fntIcons, "0", Gfx.TEXT_JUSTIFY_LEFT);
@@ -968,11 +978,14 @@ class MationView extends WatchUi.WatchFace {
 
     // Draw battery witch % state
     function drawBattery(xPos, yPos, dc, position, time, inDays) { 
-        if ((is240dev == false) && (is280dev == false)) {
+        if ((is240dev == false) && (is280dev == false) && (is218dev == false)) {
             yPos += 4;
         } else if (is240dev) {
             yPos += 8;
             xPos += 14;
+        } else {
+        	yPos += 14;
+            xPos += 16;
         }
         dc.setPenWidth(1);
         var batteryPercent = System.getSystemStats().battery;
@@ -996,7 +1009,7 @@ class MationView extends WatchUi.WatchFace {
         var batteryState = ((batteryPercent / 10) * 2).toNumber();
         dc.fillRectangle(xPos - 31, yPos + 7, batteryState - 3, 7);
         
-        if (is240dev == false) {
+        if (is280dev) {
             var batText = batteryPercent.toNumber().toString() + "%";
             dc.setColor(frColor, Gfx.COLOR_TRANSPARENT);
             if (inDays) {
@@ -1347,12 +1360,12 @@ class MationView extends WatchUi.WatchFace {
         }
         dc.setPenWidth(3);
         dc.setColor(App.getApp().getProperty("HandsBottomColor"), Gfx.COLOR_TRANSPARENT);
-        dc.drawText(xPos, dc.getHeight() - 60, smallFont, LOW_PRESSURE.toString(), Gfx.TEXT_JUSTIFY_LEFT);
-        dc.drawText(xPos, 40, smallFont, HIGH_PRESSURE.toString(), Gfx.TEXT_JUSTIFY_LEFT);
+        dc.drawText((is218dev ? xPos + 12 : xPos), dc.getHeight() - 60, smallFont, LOW_PRESSURE.toString(), Gfx.TEXT_JUSTIFY_LEFT);
+        dc.drawText((is218dev ? xPos + 12 : xPos), 40, smallFont, HIGH_PRESSURE.toString(), Gfx.TEXT_JUSTIFY_LEFT);
         dc.setColor(themeColor, Gfx.COLOR_TRANSPARENT);
         
         var pressure = getPressure().toFloat();
-        if ((pressure >= LOW_PRESSURE) && (pressure <= HIGH_PRESSURE)) {
+        if ((pressure >= LOW_PRESSURE) && (pressure <= HIGH_PRESSURE)) {     
             var end = 225 - ((pressure - LOW_PRESSURE) * 0.9);
             dc.drawArc(halfWidth, halfWidth, scaleMeterRadius, Gfx.ARC_CLOCKWISE, 225, end);
             
