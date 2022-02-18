@@ -149,10 +149,10 @@ class MationView extends WatchUi.WatchFace {
             scaleMeterRadius = 110;     // FENIX 6 (260x260)
         } else if (is240dev) {
             scaleMeterRadius = 100;     // others (240x240)
-        } else {
+        } else if (is218dev) {
         	scaleMeterRadius = 90;     // others (218x218)
         }
-        
+        System.println(scaleMeterRadius);
         isAwake = true;
         smallFont = (is240dev || is218dev ? fntDataFields : Gfx.FONT_XTINY);
     }
