@@ -1,3 +1,9 @@
+Version 2.0
+- Added ambient pressure
+Version 1.9
+- fixing position of the lines on pressure and alt
+Version 1.8
+- added support of Fenix 7 family series
 Version 1.7
 - added Chronos suuport (please report bugs if any)
 Version 1.6

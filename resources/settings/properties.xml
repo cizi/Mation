@@ -30,5 +30,7 @@
     
     <property id="PressureGraphPeriod" type="number">8</property>
     <property id="PressureGraphBorder" type="number">2</property>
+
+    <property id="Pressure" type="number">1</property>
  
 </properties>

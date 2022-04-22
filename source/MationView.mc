@@ -44,6 +44,7 @@ class MationView extends WatchUi.WatchFace {
     hidden var secFontHeight;
     hidden var uc;
     hidden var smallDialCoordsLines;
+    hidden var activityInfo;
 
     // Sunset / sunrise / moon phase vars
     hidden var sc;
@@ -99,6 +100,7 @@ class MationView extends WatchUi.WatchFace {
         fntIcons = WatchUi.loadResource(Rez.Fonts.fntIcons);
         fntDataFields = WatchUi.loadResource(Rez.Fonts.fntDataFields);
         partialUpdatesAllowed = ( Toybox.WatchUi.WatchFace has :onPartialUpdate );
+        activityInfo = Activity.getActivityInfo();
     }
 
     // Load your resources here
@@ -543,8 +545,8 @@ class MationView extends WatchUi.WatchFace {
 
         dc.setColor(frColor, Gfx.COLOR_TRANSPARENT);
         var hr = "--";
-        if (Activity.getActivityInfo().currentHeartRate != null) {
-            hr = Activity.getActivityInfo().currentHeartRate.toString();
+        if (activityInfo.currentHeartRate != null) {
+            hr = activityInfo.currentHeartRate.toString();
         }
         dc.drawText(xPos - 19, yPos, fntDataFields, hr, Gfx.TEXT_JUSTIFY_LEFT);
     }
@@ -561,9 +563,9 @@ class MationView extends WatchUi.WatchFace {
         var goldenAm = null;
         var goldenPm = null;
 
-        location = Activity.getActivityInfo().currentLocation;
+        location = activityInfo.currentLocation;
         if (location) {
-            location = Activity.getActivityInfo().currentLocation.toRadians();
+            location =activityInfo.currentLocation.toRadians();
             app.setProperty("location", location);
         } else {
             location =  app.getProperty("location");
@@ -1124,6 +1126,9 @@ class MationView extends WatchUi.WatchFace {
             xPos += 3;
         }
         drawPressureGraph(xPos, yPos - 3, dc, baroFigure);
+        if ((App.getApp().getProperty("Pressure").toNumber() == 2) && (activityInfo has :ambientPressure)) {
+            pressure = activityInfo.ambientPressure == null ? 0 : (activityInfo.ambientPressure / 100).toNumber();
+        }
         dc.setColor(frColor, Gfx.COLOR_TRANSPARENT);
         dc.drawText(xPos - 6, yPos, Gfx.FONT_TINY, pressure.toString(), Gfx.TEXT_JUSTIFY_LEFT);
     }
@@ -1280,7 +1285,6 @@ class MationView extends WatchUi.WatchFace {
         var unit = "";
         var sample;
         var value = "";
-        var activityInfo = Activity.getActivityInfo();
         var altitude = activityInfo.altitude;
         if ((altitude == null) && (Toybox has :SensorHistory) && (Toybox.SensorHistory has :getElevationHistory)) {
             sample = SensorHistory.getElevationHistory({ :period => 1, :order => SensorHistory.ORDER_NEWEST_FIRST })

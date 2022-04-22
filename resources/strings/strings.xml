@@ -6,6 +6,10 @@
     <string id="ForegroundColorTitle">Text Color</string>
     <string id="DaylightProgessTitle">Theme color</string>
     <string id="HandsBottomColorTitle">Hands back color</string>
+
+    <string id="PressureTitle">Pressure type</string>
+    <string id="PressureAtmospheric">Atmospheric (hPa)</string>
+    <string id="PressureAmbient">Ambient (hPa)</string>
     
     <string id="Opt1Title">Field 1</string>
     <string id="Opt2Title">Field 2</string>
