@@ -5,6 +5,7 @@
     <string id="BackgroundColorTitle">Background Color</string>
     <string id="ForegroundColorTitle">Text Color</string>
     <string id="DaylightProgessTitle">Theme color</string>
+    <string id="UseBiggerFontDataFieldsTitle">Bigger fot for data fields (esp. for Tactix, 6X, 7X watches)</string>
     <string id="HandsBottomColorTitle">Hands back color</string>
 
     <string id="PressureTitle">Pressure type</string>
@@ -21,13 +22,11 @@
 
     <string id="Steps">Today's steps</string>
     <string id="Distance">Today's distance (km)</string>    
-    <string id="Calories">Today's calories (kCal / MCal)</string>
-    <string id="HR">HR</string>
     <string id="Battery">Battery %</string>
     <string id="BatteryInDays">Battery remaining in days</string>
     <string id="Altitude">Altitude</string>
     <string id="Pressure">Pressure</string>
-    <string id="Floors">Floors</string>
+    <string id="Weather">Weather forecast</string>
 
     <string id="MilitaryFormatTitle">Military Format for 24 Hour Time</string>
     <string id="DateFormatTitle">Date Format</string>

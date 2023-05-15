@@ -3,6 +3,7 @@
     <property id="BackgroundColor" type="number">0x000000</property>
     <property id="ForegroundColor" type="number">0xFFFFFF</property>
     <property id="HandsBottomColor" type="number">0x555555</property>
+    <property id="Opt1" type="number">4</property>
 
     <!-- property id="Opt1" type="number">1</property>  
     <property id="Opt2" type="number">8</property>
@@ -10,11 +11,11 @@
     <property id="Opt4" type="number">7</property> -->
     
     <property id="DaylightProgess" type="number">0xFF5500</property>
+    <property id="UseBiggerFontDataFields" type="boolean">false</property>
 
     <property id="DateFormat" type="number">3</property>
     <property id="ShowMoonPhaseBeforeDate" type="boolean">false</property>
 
-    <property id="ShowFullDial" type="boolean">true</property>
     <property id="AlarmIndicator" type="boolean">true</property>
     <property id="ShowNotificationAndConnection" type="boolean">true</property>
     <property id="UseMilitaryFormat" type="boolean">false</property>

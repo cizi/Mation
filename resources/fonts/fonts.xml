@@ -3,4 +3,8 @@
 	<font antialias="true" id="fntIcons" filename="crystal-icons.fnt" />
 	
 	<font antialias="true" id="fntDataFields" filename="nk57.fnt" /> 
+
+	<font antialias="true" id="fntDataFieldsX" filename="nk57_X.fnt" /> 
+
+	<font antialias="true" id="fntWeather" filename="weather_art.fnt" /> 
 </fonts>

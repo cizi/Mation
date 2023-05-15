@@ -14,20 +14,15 @@ using Toybox.Application;
 class MationView extends WatchUi.WatchFace {
 
     // const for settings
-    const MOON_PHASE = 0;
     const SUNSET_SUNSRISE = 1;
-    const FLOORS = 2;
-    const CALORIES = 3;
     const STEPS = 4;
-    const HR = 5;
     const BATTERY = 6;
     const ALTITUDE = 7;
     const PRESSURE = 8;
-    const NEXT_SUN_EVENT = 9;
-    const SECOND_TIME = 10;
-    const DISABLED = 100;
-    const DISTANCE = 11;
     const BATTERY_IN_DAYS = 12;
+    const WEATHER = 14;
+    const DISABLED = 100;
+    
     const PRESSURE_ARRAY_KEY = "pressure";
     const LOW_PRESSURE = 950;
     const HIGH_PRESSURE = 1050;
@@ -64,6 +59,7 @@ class MationView extends WatchUi.WatchFace {
 
     hidden var fntIcons = null;
     hidden var fntDataFields = null;
+    hidden var fntWeather = null;
 
     hidden var halfWidth = null;
     hidden var field1 = null;
@@ -90,6 +86,10 @@ class MationView extends WatchUi.WatchFace {
     hidden var minHandEnd; 
     
     hidden var smallFont;
+
+    var weatherCode = null; 
+    var weatherTemp = "--";
+    var isNight;
     
     function initialize() {
         WatchFace.initialize();
@@ -98,7 +98,7 @@ class MationView extends WatchUi.WatchFace {
         uc = new UiCalc();
 
         fntIcons = WatchUi.loadResource(Rez.Fonts.fntIcons);
-        fntDataFields = WatchUi.loadResource(Rez.Fonts.fntDataFields);
+        fntWeather = WatchUi.loadResource(Rez.Fonts.fntWeather);
         partialUpdatesAllowed = ( Toybox.WatchUi.WatchFace has :onPartialUpdate );
         activityInfo = Activity.getActivityInfo();
     }
@@ -154,9 +154,13 @@ class MationView extends WatchUi.WatchFace {
         } else if (is218dev) {
         	scaleMeterRadius = 90;     // others (218x218)
         }
-        System.println(scaleMeterRadius);
         isAwake = true;
-        smallFont = (is240dev || is218dev ? fntDataFields : Gfx.FONT_XTINY);
+
+        if  (app.getProperty("Opt1") == WEATHER) {
+            app.weatherForecast = new WeatherForecast();
+        } else {
+            app.weatherForecast = null;
+        }
     }
 
     // Called when this View is brought to the foreground. Restore
@@ -170,6 +174,13 @@ class MationView extends WatchUi.WatchFace {
         if (dc has :clearClip) {    // Clear any partial update clipping.
             dc.clearClip();
         }
+
+        if (app.getProperty("UseBiggerFontDataFields")) {
+            fntDataFields = WatchUi.loadResource(Rez.Fonts.fntDataFieldsX);
+        } else {
+            fntDataFields = WatchUi.loadResource(Rez.Fonts.fntDataFields);
+        }
+        smallFont = (is280dev || is240dev || is218dev ? fntDataFields : Gfx.FONT_XTINY);
 
         var now = Time.now();
         var today = Gregorian.info(now, Time.FORMAT_MEDIUM);
@@ -192,7 +203,7 @@ class MationView extends WatchUi.WatchFace {
         // Call the parent onUpdate function to redraw the layout
         View.onUpdate(dc);
         settings = System.getDeviceSettings();
-        var isNight = checkIfNightMode(sunriseMoment, sunsetMoment, new Time.Moment(now.value()));  // needs to by firts bucause of isNight variable
+        isNight = checkIfNightMode(sunriseMoment, sunsetMoment, new Time.Moment(now.value()));  // needs to by firts bucause of isNight variable
         if (isNight) {
             frColor = 0x000000;
             bgColor = 0xFFFFFF;
@@ -236,7 +247,11 @@ class MationView extends WatchUi.WatchFace {
         drawAltToMeter(dc);
          
         var field0 = [field1[0] + 12, field1[1] + 8]; 
-        drawDataField(STEPS, 1, field0, today, secondTime, dc);    
+        if (App.getApp().getProperty("Opt1") == 4) {
+            drawDataField(STEPS, 1, field0, today, secondTime, dc);    
+        } else {
+            drawDataField(WEATHER, 1, field0, today, secondTime, dc);    
+        }
         drawDataField(SUNSET_SUNSRISE, 1, field1, today, secondTime, dc);  // FIELD 1 - App.getApp().getProperty("Opt1")
         drawDataField(PRESSURE, 2, field2, today, secondTime, dc);  // FIELD 2 - App.getApp().getProperty("Opt2")
         drawDataField(ALTITUDE, 3, field3, today, secondTime, dc);  // FIELD 3 - App.getApp().getProperty("Opt3")
@@ -272,7 +287,16 @@ class MationView extends WatchUi.WatchFace {
         } else if (isAwake) {
             drawSecondHand(dc, today, minHandEnd);
         }
-          
+
+        // WEATHER
+        if (app.getProperty("Opt1") == WEATHER) {
+            // Logging weather each 15 minutes and only if I don't have the value already logged
+            var lastWeatherCheck = (app.Storage.getValue("lastWeatherCheck") == null ? null : app.Storage.getValue("lastWeatherCheck").toNumber());
+            if (((today.min % 15 == 0) && (today.min != lastWeatherCheck)) || weatherCode == null) {
+                handleWeather();
+                app.Storage.setValue("lastWeatherCheck", today.min);
+            }
+        }
     }
     
     
@@ -425,17 +449,8 @@ class MationView extends WatchUi.WatchFace {
     // Draw data field by params. One function do all the fields by coordinates and position
     function drawDataField(dataFiled, position, fieldCors, today, secondTime, dc) {
         switch (dataFiled) {
-            case MOON_PHASE:
-            today = Gregorian.info(Time.now(), Time.FORMAT_SHORT);
-            drawMoonPhase(halfWidth, (dc.getHeight() / 5).toNumber(), dc, getMoonPhase(today), position);
-            break;
-
             case SUNSET_SUNSRISE:
             drawSunsetSunriseTime(fieldCors[0], fieldCors[1], dc, position);
-            break;
-
-            case NEXT_SUN_EVENT:
-            drawNextSunTime(fieldCors[0], fieldCors[1], dc, position);
             break;
 
             case BATTERY:
@@ -446,10 +461,6 @@ class MationView extends WatchUi.WatchFace {
             drawBattery(fieldCors[0], fieldCors[1], dc, position, today, true);
             break;
 
-            case HR:
-            drawHr(fieldCors[0], fieldCors[1], dc, position);
-            break;
-
             case PRESSURE:
             drawPressure(fieldCors[0], fieldCors[1], dc, getPressure(), today, position);
             break;
@@ -457,25 +468,13 @@ class MationView extends WatchUi.WatchFace {
             case STEPS:
             drawSteps(fieldCors[0], fieldCors[1], dc, position);
             break;
-            
-            case DISTANCE:
-            drawDistance(fieldCors[0], fieldCors[1], dc, position);
-            break;
 
             case ALTITUDE:
             drawAltitude(fieldCors[0], fieldCors[1], dc, position);
             break;
 
-            case FLOORS:
-            drawFloors(fieldCors[0], fieldCors[1], dc, position);
-            break;
-
-            case CALORIES:
-            drawCalories(fieldCors[0], fieldCors[1], dc, position);
-            break;
-            
-            case SECOND_TIME:
-            drawSecondTime(fieldCors[0], fieldCors[1], dc, secondTime, position);
+            case app.WEATHER:
+            drawWeather(fieldCors[0], fieldCors[1], dc, today, position);
             break;
         }
     }
@@ -490,28 +489,6 @@ class MationView extends WatchUi.WatchFace {
         
         return sc.momentToInfo(secondTimeMoment);
     }
-    
-    
-    // Draw second time liek a data field
-    function drawSecondTime(xPos, yPos, dc, secondTime, position) {
-        if (position == 1) {
-            xPos += 24;
-            yPos -= 17;
-        }
-        if (position == 2) {
-            xPos += 21;
-        }
-        if (position == 3) {
-            xPos -= (is280dev ? -2 : (is240dev ? 9 : 3));
-        }
-        if (position == 4) {
-            xPos -= ((is240dev == false) && (is280dev == false) ? 9 : 5);
-        }
-        var value = getFormattedTime(secondTime.hour, secondTime.min);
-        value = value[:formatted] + value[:amPm];
-        dc.setColor(frColor, Gfx.COLOR_TRANSPARENT);
-        dc.drawText(xPos, yPos, fntDataFields, value, Gfx.TEXT_JUSTIFY_CENTER);
-    }
 
     // Load or refresh the sun times
     function reloadSuntimes(now) {
@@ -523,34 +500,6 @@ class MationView extends WatchUi.WatchFace {
         goldenAmMoment = suntimes[:goldenAm];
         goldenPmMoment = suntimes[:goldenPm];
     }
-
-    // Draw current HR
-    function drawHr(xPos, yPos, dc, position) {
-        if (position == 1) {
-            xPos += 44;
-            yPos = (is240dev ? yPos - 18 : yPos - 16);
-        }
-        if ((position == 2) && is240dev) {
-            xPos += 42;
-        } else if ((position == 2) && is280dev) {
-            xPos += 47;
-        } else if (position == 2) {
-            xPos += 37;
-        }
-        if ((position == 3) || (position == 4)) {
-            xPos += 11;
-        }
-        dc.setColor(themeColor, Gfx.COLOR_TRANSPARENT);
-        dc.drawText(xPos - 44, yPos - 3, fntIcons, "3", Gfx.TEXT_JUSTIFY_LEFT);
-
-        dc.setColor(frColor, Gfx.COLOR_TRANSPARENT);
-        var hr = "--";
-        if (activityInfo.currentHeartRate != null) {
-            hr = activityInfo.currentHeartRate.toString();
-        }
-        dc.drawText(xPos - 19, yPos, fntDataFields, hr, Gfx.TEXT_JUSTIFY_LEFT);
-    }
-
 
     // calculate sunset and sunrise times based on location
     // return array of moments
@@ -592,58 +541,6 @@ class MationView extends WatchUi.WatchFace {
         };
     }
 
-
-    // draw next sun event
-    function drawNextSunTime(xPos, yPos, dc, position) {
-        if (location != null) {
-            if (position == 1) {
-                xPos -= 6;
-            }
-            if (position == 4) {
-                xPos -= 38;
-                yPos += 14;
-            }
-
-            if ((sunriseMoment != null) && (sunsetMoment != null)) {
-                var nextSunEvent = 0;
-                var now = new Time.Moment(Time.now().value());
-                // Convert to same format as sunTimes, for easier comparison. Add a minute, so that e.g. if sun rises at
-                // 07:38:17, then 07:38 is already consided daytime (seconds not shown to user).
-                now = now.add(new Time.Duration(60));
-
-                if (blueAmMoment.compare(now) > 0) {            // Before blue hour today: today's blue hour is next.
-                    nextSunEvent = sc.momentToInfo(blueAmMoment);
-                    drawSun(xPos, yPos, dc, false, App.getApp().getProperty("BlueHourColor"));
-                } else if (sunriseMoment.compare(now) > 0) {        // Before sunrise today: today's sunrise is next.
-                    nextSunEvent = sc.momentToInfo(sunriseMoment);
-                    drawSun(xPos, yPos, dc, false, App.getApp().getProperty("GoldenHourColor"));
-                } else if (goldenAmMoment.compare(now) > 0) {
-                    nextSunEvent = sc.momentToInfo(goldenAmMoment);
-                    drawSun(xPos, yPos, dc, false, themeColor);
-                } else if (goldenPmMoment.compare(now) > 0) {
-                    nextSunEvent = sc.momentToInfo(goldenPmMoment);
-                    drawSun(xPos, yPos, dc, true, App.getApp().getProperty("GoldenHourColor"));
-                } else if (sunsetMoment.compare(now) > 0) { // After sunrise today, before sunset today: today's sunset is next.
-                    nextSunEvent = sc.momentToInfo(sunsetMoment);
-                    drawSun(xPos, yPos, dc, true, App.getApp().getProperty("BlueHourColor"));
-                } else {    // This is here just for sure if some time condition won't meet the timing
-                            // comparation. It menas I will force calculate the next event, the rest will be updated in
-                            // the next program iteration - After sunset today: tomorrow's blue hour (if any) is next.
-                    now = now.add(new Time.Duration(Gregorian.SECONDS_PER_DAY));
-                    var blueHrAm = sc.calculate(now, location, BLUE_HOUR_AM);
-                    nextSunEvent = sc.momentToInfo(blueHrAm);
-                    drawSun(xPos, yPos, dc, false, App.getApp().getProperty("BlueHourColor"));
-                }
-
-                var value = getFormattedTime(nextSunEvent.hour, nextSunEvent.min); // App.getApp().getFormattedTime(hour, min);
-                value = value[:formatted] + value[:amPm];
-                dc.setColor(frColor, Gfx.COLOR_TRANSPARENT);
-                dc.drawText(xPos + 21, yPos - 15, fntDataFields, value, Gfx.TEXT_JUSTIFY_LEFT);
-            }
-        }
-    }
-
-
     // draw next sun event
     function drawSunsetSunriseTime(xPos, yPos, dc, position) {
         if (location != null) {
@@ -681,7 +578,6 @@ class MationView extends WatchUi.WatchFace {
             }
         }
     }
-
 
     // check if night mode on and if is night
     function checkIfNightMode(sunrise, sunset, now) {
@@ -777,84 +673,6 @@ class MationView extends WatchUi.WatchFace {
         dc.drawText(posX + 22, posY, smallFont, stepsCount.toString(), Gfx.TEXT_JUSTIFY_LEFT);
     }
     
-    
-    // Draw steps info
-    function drawDistance(posX, posY, dc, position) {
-        if (position == 1) {
-            posX -= 10;
-            posY -= (is240dev ? 18 : 16);
-        }
-        if (position == 2) {
-            posX -= (is240dev ? 6 : (is280dev ? 14 : 4));
-        }
-        if (position == 3) {
-            posX -= (is240dev ? 40 : 36);
-        }
-        if (position == 4) {
-            posX -= (is240dev ? 40 : 41);
-        }
-
-        dc.setColor(themeColor, bgColor);
-        dc.drawText(posX - 4, posY - 4, fntIcons, "7", Gfx.TEXT_JUSTIFY_LEFT);
-
-        dc.setColor(frColor, Gfx.COLOR_TRANSPARENT);
-        var info = ActivityMonitor.getInfo();
-        var distanceKm = (info.distance / 100000).format("%.2f");
-        if (is280dev || (position == 1) || (position == 4))  {
-            distanceKm = distanceKm.toString() + "km";
-        }
-        dc.drawText(posX + 22, posY, fntDataFields, distanceKm.toString(), Gfx.TEXT_JUSTIFY_LEFT);
-    }
-
-
-    // Draw floors info
-    function drawFloors(posX, posY, dc, position) {
-        if (position == 1) {
-            posX += 2;
-            posY = (is240dev ? posY - 18 : posY - 16);
-        }
-            if (position == 3) {
-                posX -= 32;
-        }
-        if (position == 4) {
-            posX = (is240dev ? (posX - 25) : (posX - 28));
-        }
-
-        dc.setColor(themeColor, Gfx.COLOR_TRANSPARENT);
-        dc.drawText(posX - 4, posY - 4, fntIcons, "1", Gfx.TEXT_JUSTIFY_LEFT);
-
-        dc.setColor(frColor, Gfx.COLOR_TRANSPARENT);
-        var info = ActivityMonitor.getInfo();
-        dc.drawText(posX + 22, posY, fntDataFields, info.floorsClimbed.toString(), Gfx.TEXT_JUSTIFY_LEFT);
-    }
-
-
-    // Draw calories per day
-    function drawCalories(posX, posY, dc, position) {
-        if (position == 1) {
-            posX -= 2;
-            posY = (is240dev ? posY - 18 : posY - 16);
-        }
-            if (position == 3) {
-                posX = (is240dev ? (posX - 38) : (posX - 32));
-        }
-        if (position == 4) {
-            posX = (is240dev ? (posX - 32) : (posX - 32));
-        }
-
-        dc.setColor(themeColor, Gfx.COLOR_TRANSPARENT);
-        dc.drawText(posX - 2, posY - 4, fntIcons, "6", Gfx.TEXT_JUSTIFY_LEFT);
-
-        dc.setColor(frColor, Gfx.COLOR_TRANSPARENT);
-        var info = ActivityMonitor.getInfo();
-        var caloriesCount = info.calories;
-        if (is240dev && (caloriesCount > 999) && ((position == 2) || (position == 3))){
-            caloriesCount = (caloriesCount / 1000.0).format("%.1f").toString() + "M";
-        }
-        dc.drawText(posX + 20, posY, fntDataFields, caloriesCount.toString(), Gfx.TEXT_JUSTIFY_LEFT);
-    }
-
-
     // Draw BT connection status
     function drawBtConnection(dc) {
         if ((settings has : phoneConnected) && (settings.phoneConnected)) {
@@ -1355,7 +1173,24 @@ class MationView extends WatchUi.WatchFace {
         }
         app.setProperty("pressure0", pressureValue);
     }
-    
+
+    function handleWeather() {
+        weatherCode = null; 
+        weatherTemp = "--";
+        if ((Toybox has :Weather) && (Toybox.Weather has :getCurrentConditions)) {
+            var weatherCond = Weather.getCurrentConditions();
+            if ((weatherCond != null) && (weatherCond.condition instanceof Number)) {
+                weatherCode = weatherCond.condition;
+            } 
+            if ((weatherCond != null) && (weatherCond.temperature instanceof Number)) {
+                if (settings.temperatureUnits == System.UNIT_STATUTE) {
+                    weatherTemp = ((weatherCond.temperature * (9.0 / 5)) + 32).format("%02d") + " F"; 
+                } else {
+                    weatherTemp = weatherCond.temperature + " C";
+                }
+            } 
+        }
+    }
     
     function drawPressureToMeter(dc) {
         var xPos = (halfWidth / 2) - 8;
@@ -1454,6 +1289,55 @@ class MationView extends WatchUi.WatchFace {
             app.setProperty("lowAlt", lowAlt);
             app.setProperty("topAlt", topAlt);
         }
-        
+    }
+
+    function drawWeather(xPos, yPos, dc, today, position) {
+        if (position == 1) {
+            xPos += 36;
+            // yPos -= 17;
+        }
+
+        // replacing day icon for night icon
+        if ((weatherCode == 0) && isNight) {
+            weatherCode = 54;
+        }
+        // replacing night icon for day icon
+        if ((weatherCode == 54) && !isNight) {
+            weatherCode = 0;
+        }
+
+        var weatherIconChar = app.weatherForecast.getIconChar(weatherCode);
+        if (weatherIconChar != null) {
+            var degreeSignX = 0;
+            if (weatherTemp.toString().length() == 3) {
+                degreeSignX = 4;
+            } else if (weatherTemp.toString().length() == 4) {
+                degreeSignX = 8;
+            } else if (weatherTemp.toString().length() == 5) {
+                degreeSignX = 14;
+                xPos -= 4;
+            } else if (weatherTemp.toString().length() == 6) {
+                degreeSignX = 18;
+                xPos -= 4;
+            }
+
+            dc.setColor(themeColor, Gfx.COLOR_TRANSPARENT);
+            dc.drawText(xPos - 36, yPos - 22 - app.weatherForecast.getIconCentering(weatherCode), fntWeather, weatherIconChar, Gfx.TEXT_JUSTIFY_CENTER);
+
+            dc.setColor(frColor, Gfx.COLOR_TRANSPARENT);
+
+            dc.setPenWidth(1);
+            if (position == 1 && is240dev && app.getProperty("UseBiggerFontDataFields")) {
+                yPos -= 2;
+            }
+            dc.drawCircle(xPos + degreeSignX, yPos + 5 , 3);
+            dc.drawText(xPos + 4, yPos, smallFont, weatherTemp, Gfx.TEXT_JUSTIFY_CENTER);
+        } else {
+            xPos += 10;
+            dc.setColor(themeColor, Gfx.COLOR_TRANSPARENT);
+            dc.drawText(xPos - 36, yPos - 22 - app.weatherForecast.getIconCentering(53), fntWeather, app.weatherForecast.getIconChar(53), Gfx.TEXT_JUSTIFY_CENTER);
+            dc.setColor(frColor, Gfx.COLOR_TRANSPARENT);
+            dc.drawText(xPos - 10, yPos, smallFont, "W8", Gfx.TEXT_JUSTIFY_CENTER);
+        }
     }
 }
